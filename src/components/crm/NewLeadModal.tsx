@@ -1,0 +1,104 @@
+import React, { useState } from "react";
+import { LeadOrigin, LeadStage, ORIGIN_LABELS, ORIGIN_OPTIONS, STAGE_LABELS, STAGE_ORDER } from "@/types/lead";
+import { useLeads } from "@/context/LeadsContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+}
+
+const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
+  const { addLead } = useLeads();
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    origin: "manual" as LeadOrigin,
+    service: "",
+    value: "",
+    lastMessage: "",
+    observations: "",
+    stage: "lead_entrou" as LeadStage,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !form.phone) return;
+    addLead({
+      name: form.name,
+      phone: form.phone,
+      origin: form.origin,
+      stage: form.stage,
+      service: form.service,
+      value: parseFloat(form.value.replace(/[^\d.,]/g, "").replace(",", ".")) || 0,
+      lastMessage: form.lastMessage,
+      lastInteraction: new Date().toISOString(),
+      observations: form.observations,
+    });
+    setForm({
+      name: "", phone: "", origin: "manual", service: "",
+      value: "", lastMessage: "", observations: "", stage: "lead_entrou",
+    });
+    onClose();
+  };
+
+  const set = (field: string, value: string) => setForm({ ...form, [field]: value });
+
+  return (
+    <Dialog open={open} onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Novo Lead</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-3 mt-2">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Nome *</label>
+            <input className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.name} onChange={(e) => set("name", e.target.value)} required />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Telefone *</label>
+            <input className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.phone} onChange={(e) => set("phone", e.target.value)} required />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Origem</label>
+            <select className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.origin} onChange={(e) => set("origin", e.target.value)}>
+              {ORIGIN_OPTIONS.map((o) => <option key={o} value={o}>{ORIGIN_LABELS[o]}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Etapa inicial</label>
+            <select className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.stage} onChange={(e) => set("stage", e.target.value)}>
+              {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Serviço de interesse</label>
+            <input className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.service} onChange={(e) => set("service", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Valor (R$)</label>
+            <input className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.value} onChange={(e) => set("value", e.target.value)} placeholder="0,00" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Última mensagem</label>
+            <textarea className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none" rows={2} value={form.lastMessage} onChange={(e) => set("lastMessage", e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Observações</label>
+            <textarea className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none" rows={2} value={form.observations} onChange={(e) => set("observations", e.target.value)} />
+          </div>
+          <div className="flex justify-end pt-2">
+            <button type="button" onClick={onClose} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent transition-colors mr-2">
+              Cancelar
+            </button>
+            <button type="submit" className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+              Criar lead
+            </button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default NewLeadModal;
