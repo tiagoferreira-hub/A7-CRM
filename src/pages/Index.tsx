@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import { LeadsProvider } from "@/context/LeadsContext";
-import { ServicesProvider } from "@/context/ServicesContext";
 import KanbanBoard from "@/components/crm/KanbanBoard";
 import Dashboard from "@/components/crm/Dashboard";
 import Settings from "@/pages/Settings";
@@ -8,7 +6,7 @@ import { LayoutGrid, BarChart3, Settings as SettingsIcon } from "lucide-react";
 
 type Tab = "pipeline" | "dashboard" | "settings";
 
-const CRMApp: React.FC = () => {
+const Index: React.FC = () => {
   const [tab, setTab] = useState<Tab>("pipeline");
 
   return (
@@ -49,13 +47,5 @@ const CRMApp: React.FC = () => {
     </div>
   );
 };
-
-const Index = () => (
-  <ServicesProvider>
-    <LeadsProvider>
-      <CRMApp />
-    </LeadsProvider>
-  </ServicesProvider>
-);
 
 export default Index;
