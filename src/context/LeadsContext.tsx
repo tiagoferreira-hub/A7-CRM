@@ -1,12 +1,14 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { Lead, LeadStage } from "@/types/lead";
-import { sampleLeads } from "@/data/sampleLeads";
 
 interface LeadsContextType {
   leads: Lead[];
   addLead: (lead: Omit<Lead, "id" | "createdAt">) => void;
   updateLead: (id: string, updates: Partial<Lead>) => void;
   moveLead: (id: string, newStage: LeadStage) => void;
+  loading: boolean;
 }
 
 const LeadsContext = createContext<LeadsContextType | null>(null);
@@ -17,30 +19,86 @@ export const useLeads = () => {
   return ctx;
 };
 
+// Map DB row to Lead type
+const rowToLead = (row: any): Lead => ({
+  id: row.id,
+  name: row.name,
+  phone: row.phone,
+  origin: row.origin,
+  stage: row.stage,
+  service: row.service,
+  value: Number(row.value),
+  lastMessage: row.last_message,
+  lastInteraction: row.last_interaction,
+  observations: row.observations,
+  createdAt: row.created_at,
+});
+
 export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [leads, setLeads] = useState<Lead[]>(sampleLeads);
+  const { activeCompanyId } = useAuth();
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const addLead = useCallback((lead: Omit<Lead, "id" | "createdAt">) => {
-    const newLead: Lead = {
-      ...lead,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    };
-    setLeads((prev) => [newLead, ...prev]);
+  const loadLeads = useCallback(async () => {
+    if (!activeCompanyId) { setLeads([]); return; }
+    setLoading(true);
+    const { data } = await supabase
+      .from("leads")
+      .select("*")
+      .eq("company_id", activeCompanyId)
+      .order("created_at", { ascending: false });
+    setLeads(data?.map(rowToLead) ?? []);
+    setLoading(false);
+  }, [activeCompanyId]);
+
+  useEffect(() => {
+    loadLeads();
+  }, [loadLeads]);
+
+  const addLead = useCallback(async (lead: Omit<Lead, "id" | "createdAt">) => {
+    if (!activeCompanyId) return;
+    const { data } = await supabase
+      .from("leads")
+      .insert({
+        company_id: activeCompanyId,
+        name: lead.name,
+        phone: lead.phone,
+        origin: lead.origin,
+        stage: lead.stage,
+        service: lead.service,
+        value: lead.value,
+        last_message: lead.lastMessage,
+        last_interaction: lead.lastInteraction,
+        observations: lead.observations,
+      })
+      .select()
+      .single();
+    if (data) setLeads(prev => [rowToLead(data), ...prev]);
+  }, [activeCompanyId]);
+
+  const updateLead = useCallback(async (id: string, updates: Partial<Lead>) => {
+    const dbUpdates: any = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+    if (updates.origin !== undefined) dbUpdates.origin = updates.origin;
+    if (updates.stage !== undefined) dbUpdates.stage = updates.stage;
+    if (updates.service !== undefined) dbUpdates.service = updates.service;
+    if (updates.value !== undefined) dbUpdates.value = updates.value;
+    if (updates.lastMessage !== undefined) dbUpdates.last_message = updates.lastMessage;
+    if (updates.lastInteraction !== undefined) dbUpdates.last_interaction = updates.lastInteraction;
+    if (updates.observations !== undefined) dbUpdates.observations = updates.observations;
+
+    await supabase.from("leads").update(dbUpdates).eq("id", id);
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
   }, []);
 
-  const updateLead = useCallback((id: string, updates: Partial<Lead>) => {
-    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)));
-  }, []);
-
-  const moveLead = useCallback((id: string, newStage: LeadStage) => {
-    setLeads((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, stage: newStage } : l))
-    );
+  const moveLead = useCallback(async (id: string, newStage: LeadStage) => {
+    await supabase.from("leads").update({ stage: newStage }).eq("id", id);
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, stage: newStage } : l));
   }, []);
 
   return (
-    <LeadsContext.Provider value={{ leads, addLead, updateLead, moveLead }}>
+    <LeadsContext.Provider value={{ leads, addLead, updateLead, moveLead, loading }}>
       {children}
     </LeadsContext.Provider>
   );
