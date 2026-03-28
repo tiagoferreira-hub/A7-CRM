@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 export interface Service {
   id: string;
@@ -10,6 +12,7 @@ interface ServicesContextType {
   addService: (name: string) => void;
   updateService: (id: string, name: string) => void;
   deleteService: (id: string) => void;
+  loading: boolean;
 }
 
 const ServicesContext = createContext<ServicesContextType | null>(null);
@@ -20,33 +23,49 @@ export const useServices = () => {
   return ctx;
 };
 
-const defaultServices: Service[] = [
-  { id: "1", name: "Harmonização Facial" },
-  { id: "2", name: "Botox" },
-  { id: "3", name: "Preenchimento Labial" },
-  { id: "4", name: "Limpeza de Pele" },
-  { id: "5", name: "Peeling Químico" },
-  { id: "6", name: "Microagulhamento" },
-  { id: "7", name: "Depilação a Laser" },
-];
-
 export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [services, setServices] = useState<Service[]>(defaultServices);
+  const { activeCompanyId, user } = useAuth();
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const addService = useCallback((name: string) => {
-    setServices((prev) => [...prev, { id: Date.now().toString(), name }]);
+  const loadServices = useCallback(async () => {
+    if (!activeCompanyId) { setServices([]); return; }
+    setLoading(true);
+    const { data } = await supabase
+      .from("services")
+      .select("id, name")
+      .eq("company_id", activeCompanyId)
+      .order("created_at");
+    setServices(data?.map(s => ({ id: s.id, name: s.name })) ?? []);
+    setLoading(false);
+  }, [activeCompanyId]);
+
+  useEffect(() => {
+    loadServices();
+  }, [loadServices]);
+
+  const addService = useCallback(async (name: string) => {
+    if (!activeCompanyId) return;
+    const { data } = await supabase
+      .from("services")
+      .insert({ company_id: activeCompanyId, name })
+      .select("id, name")
+      .single();
+    if (data) setServices(prev => [...prev, { id: data.id, name: data.name }]);
+  }, [activeCompanyId]);
+
+  const updateService = useCallback(async (id: string, name: string) => {
+    await supabase.from("services").update({ name }).eq("id", id);
+    setServices(prev => prev.map(s => s.id === id ? { ...s, name } : s));
   }, []);
 
-  const updateService = useCallback((id: string, name: string) => {
-    setServices((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
-  }, []);
-
-  const deleteService = useCallback((id: string) => {
-    setServices((prev) => prev.filter((s) => s.id !== id));
+  const deleteService = useCallback(async (id: string) => {
+    await supabase.from("services").delete().eq("id", id);
+    setServices(prev => prev.filter(s => s.id !== id));
   }, []);
 
   return (
-    <ServicesContext.Provider value={{ services, addService, updateService, deleteService }}>
+    <ServicesContext.Provider value={{ services, addService, updateService, deleteService, loading }}>
       {children}
     </ServicesContext.Provider>
   );
