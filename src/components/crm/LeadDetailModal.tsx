@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Lead, STAGE_LABELS, STAGE_ORDER, ORIGIN_LABELS, ORIGIN_OPTIONS, LeadStage, LeadOrigin } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
+import { useServices } from "@/context/ServicesContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X } from "lucide-react";
 
 interface Props {
   lead: Lead | null;
@@ -21,6 +21,7 @@ const formatDateTime = (s: string) =>
 
 const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const { updateLead, moveLead } = useLeads();
+  const { services } = useServices();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<Lead>>({});
 
@@ -125,7 +126,19 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                 ))}
               </select>
             </div>
-            <InputField label="Serviço de interesse" field="service" />
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Serviço de interesse</label>
+              <select
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                value={form.service ?? lead.service}
+                onChange={(e) => setForm({ ...form, service: e.target.value })}
+              >
+                <option value="">Selecione o serviço</option>
+                {services.map((s) => (
+                  <option key={s.id} value={s.name}>{s.name}</option>
+                ))}
+              </select>
+            </div>
             <InputField label="Valor (R$)" field="value" />
             <InputField label="Última mensagem" field="lastMessage" textarea />
             <InputField label="Observações" field="observations" textarea />

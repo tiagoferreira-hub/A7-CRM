@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Lead, ORIGIN_LABELS } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
+import { useServices } from "@/context/ServicesContext";
 import { Phone, MessageSquare, Pencil, Check, X } from "lucide-react";
 
 interface LeadCardProps {
@@ -25,6 +26,7 @@ const originColors: Record<string, string> = {
 
 const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
   const { updateLead } = useLeads();
+  const { services } = useServices();
   const [editing, setEditing] = useState(false);
   const [editService, setEditService] = useState(lead.service);
   const [editValue, setEditValue] = useState(lead.value.toString());
@@ -77,17 +79,21 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
 
       {editing ? (
         <div className="space-y-2 mt-2" onClick={(e) => e.stopPropagation()}>
-          <input
+          <select
             className="w-full text-xs border border-input rounded-md px-2 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
             value={editService}
             onChange={(e) => setEditService(e.target.value)}
-            placeholder="Serviço"
-          />
+          >
+            <option value="">Selecione o serviço</option>
+            {services.map((s) => (
+              <option key={s.id} value={s.name}>{s.name}</option>
+            ))}
+          </select>
           <input
             className="w-full text-xs border border-input rounded-md px-2 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
-            placeholder="Valor"
+            placeholder="Valor (R$)"
           />
           <div className="flex gap-1.5">
             <button
@@ -107,7 +113,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
       ) : (
         <>
           <div className="text-xs text-foreground font-medium truncate">{lead.service}</div>
-          <div className="text-sm font-semibold text-primary mt-0.5">
+          <div className="text-base font-bold text-primary mt-0.5">
             {formatCurrency(lead.value)}
           </div>
         </>

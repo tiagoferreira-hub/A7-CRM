@@ -20,8 +20,11 @@ const stageColors: Record<LeadStage, string> = {
   perdido: "bg-crm-danger",
 };
 
+const highlightedStages: LeadStage[] = ["qualificado", "agendado"];
+
 const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, leads, onOpenDetail }) => {
   const { moveLead } = useLeads();
+  const isHighlighted = highlightedStages.includes(stage);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -41,15 +44,23 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, leads, onOpenDetail 
 
   return (
     <div
-      className="flex flex-col min-w-[280px] max-w-[300px] rounded-xl bg-crm-column-bg transition-all"
+      className={`flex flex-col min-w-[280px] max-w-[300px] rounded-xl transition-all ${
+        isHighlighted
+          ? "bg-primary/[0.04] border border-primary/20"
+          : "bg-crm-column-bg"
+      }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div className="flex items-center gap-2 px-4 py-3">
-        <div className={`w-2 h-2 rounded-full ${stageColors[stage]}`} />
+        <div className={`w-2.5 h-2.5 rounded-full ${stageColors[stage]}`} />
         <h3 className="text-sm font-semibold text-foreground">{STAGE_LABELS[stage]}</h3>
-        <span className="ml-auto text-xs font-medium text-muted-foreground bg-background rounded-full px-2 py-0.5">
+        <span className={`ml-auto text-sm font-bold rounded-full px-2.5 py-0.5 ${
+          isHighlighted
+            ? "bg-primary/10 text-primary"
+            : "bg-background text-foreground"
+        }`}>
           {leads.length}
         </span>
       </div>
