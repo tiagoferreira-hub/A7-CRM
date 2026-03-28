@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { LeadOrigin, LeadStage, ORIGIN_LABELS, ORIGIN_OPTIONS, STAGE_LABELS, STAGE_ORDER } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
+import { useServices } from "@/context/ServicesContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 
 const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
   const { addLead } = useLeads();
+  const { services } = useServices();
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -73,7 +75,10 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Serviço de interesse</label>
-            <input className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.service} onChange={(e) => set("service", e.target.value)} />
+            <select className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.service} onChange={(e) => set("service", e.target.value)}>
+              <option value="">Selecione o serviço</option>
+              {services.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
+            </select>
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Valor (R$)</label>
