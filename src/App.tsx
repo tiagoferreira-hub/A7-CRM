@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ServicesProvider } from "@/context/ServicesContext";
 import { LeadsProvider } from "@/context/LeadsContext";
+import { TasksProvider } from "@/context/TasksContext";
+import { DocumentsProvider } from "@/context/DocumentsContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import OwnerPanel from "./pages/OwnerPanel";
@@ -43,14 +45,18 @@ const AppRoutes = () => {
     );
   }
 
-  // Owner viewing a company OR client → show CRM
+  // Owner viewing a company OR client/admin/seller → show CRM
   return (
     <ServicesProvider>
       <LeadsProvider>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <TasksProvider>
+          <DocumentsProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </DocumentsProvider>
+        </TasksProvider>
       </LeadsProvider>
     </ServicesProvider>
   );

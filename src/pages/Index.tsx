@@ -2,14 +2,29 @@ import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import KanbanBoard from "@/components/crm/KanbanBoard";
 import Dashboard from "@/components/crm/Dashboard";
+import SellerDashboard from "@/components/crm/SellerDashboard";
 import Settings from "@/pages/Settings";
-import { LayoutGrid, BarChart3, Settings as SettingsIcon, LogOut, ArrowLeft } from "lucide-react";
+import Tasks from "@/pages/Tasks";
+import Documents from "@/pages/Documents";
+import { LayoutGrid, BarChart3, Settings as SettingsIcon, LogOut, ArrowLeft, CheckSquare, FileText, Home } from "lucide-react";
 
-type Tab = "pipeline" | "dashboard" | "settings";
+type Tab = "home" | "pipeline" | "dashboard" | "tasks" | "documents" | "settings";
 
 const Index: React.FC = () => {
   const { signOut, displayName, user, role, viewAsCompany, setViewAsCompany } = useAuth();
-  const [tab, setTab] = useState<Tab>("pipeline");
+  const isSeller = role === "seller";
+  const [tab, setTab] = useState<Tab>(isSeller ? "home" : "pipeline");
+
+  const tabs: { key: Tab; icon: any; label: string; roles?: string[] }[] = [
+    ...(isSeller ? [{ key: "home" as Tab, icon: Home, label: "Início" }] : []),
+    { key: "pipeline", icon: LayoutGrid, label: "Pipeline" },
+    { key: "dashboard", icon: BarChart3, label: "Dashboard", roles: ["owner", "client", "admin"] },
+    { key: "tasks", icon: CheckSquare, label: "Tarefas" },
+    { key: "documents", icon: FileText, label: "Documentos", roles: ["owner", "client", "admin"] },
+    { key: "settings", icon: SettingsIcon, label: "Configurações", roles: ["owner", "client", "admin"] },
+  ];
+
+  const visibleTabs = tabs.filter(t => !t.roles || t.roles.includes(role || ""));
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -30,11 +45,7 @@ const Index: React.FC = () => {
         </div>
         <div className="flex items-center gap-3">
           <nav className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
-            {([
-              { key: "pipeline" as Tab, icon: LayoutGrid, label: "Pipeline" },
-              { key: "dashboard" as Tab, icon: BarChart3, label: "Dashboard" },
-              { key: "settings" as Tab, icon: SettingsIcon, label: "Configurações" },
-            ]).map(({ key, icon: Icon, label }) => (
+            {visibleTabs.map(({ key, icon: Icon, label }) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
@@ -62,8 +73,11 @@ const Index: React.FC = () => {
       </header>
 
       <main className="flex-1 overflow-hidden">
+        {tab === "home" && isSeller && <SellerDashboard />}
         {tab === "pipeline" && <KanbanBoard />}
         {tab === "dashboard" && <Dashboard />}
+        {tab === "tasks" && <Tasks />}
+        {tab === "documents" && <Documents />}
         {tab === "settings" && <Settings />}
       </main>
     </div>
