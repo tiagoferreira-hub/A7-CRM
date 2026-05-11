@@ -39,21 +39,24 @@ const rowToTask = (row: any): Task => ({
 });
 
 export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { activeCompanyId } = useAuth();
+  const { activeCompanyId, role, user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
 
   const loadTasks = useCallback(async () => {
     if (!activeCompanyId) { setTasks([]); return; }
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from("tasks")
       .select("*")
-      .eq("company_id", activeCompanyId)
-      .order("created_at", { ascending: false });
+      .eq("company_id", activeCompanyId);
+    if (role === "seller" && user) {
+      query = query.eq("assigned_to", user.id);
+    }
+    const { data } = await query.order("created_at", { ascending: false });
     setTasks(data?.map(rowToTask) ?? []);
     setLoading(false);
-  }, [activeCompanyId]);
+  }, [activeCompanyId, role, user]);
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
@@ -65,30 +68,32 @@ export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         company_id: activeCompanyId,
         title: task.title,
         lead_id: task.leadId,
-        assigned_to: task.assignedTo,
+        assigned_to: task.assignedTo || user?.id,
         due_date: task.dueDate,
         status: task.status,
       })
       .select()
       .single();
     if (data) setTasks(prev => [rowToTask(data), ...prev]);
-  }, [activeCompanyId]);
+  }, [activeCompanyId, user]);
 
   const updateTask = useCallback(async (id: string, updates: Partial<Task>) => {
+    if (!activeCompanyId) return;
     const dbUpdates: any = {};
     if (updates.title !== undefined) dbUpdates.title = updates.title;
     if (updates.leadId !== undefined) dbUpdates.lead_id = updates.leadId;
     if (updates.assignedTo !== undefined) dbUpdates.assigned_to = updates.assignedTo;
     if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
-    await supabase.from("tasks").update(dbUpdates).eq("id", id);
+    await supabase.from("tasks").update(dbUpdates).eq("id", id).eq("company_id", activeCompanyId);
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-  }, []);
+  }, [activeCompanyId]);
 
   const deleteTask = useCallback(async (id: string) => {
-    await supabase.from("tasks").delete().eq("id", id);
+    if (!activeCompanyId) return;
+    await supabase.from("tasks").delete().eq("id", id).eq("company_id", activeCompanyId);
     setTasks(prev => prev.filter(t => t.id !== id));
-  }, []);
+  }, [activeCompanyId]);
 
   return (
     <TasksContext.Provider value={{ tasks, addTask, updateTask, deleteTask, loading }}>
