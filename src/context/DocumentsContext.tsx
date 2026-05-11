@@ -78,20 +78,22 @@ export const DocumentsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [activeCompanyId]);
 
   const updateDocument = useCallback(async (id: string, updates: Partial<Document>) => {
+    if (!activeCompanyId) return;
     const dbUpdates: any = {};
     if (updates.title !== undefined) dbUpdates.title = updates.title;
     if (updates.docType !== undefined) dbUpdates.doc_type = updates.docType;
     if (updates.content !== undefined) dbUpdates.content = updates.content;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.closedAt !== undefined) dbUpdates.closed_at = updates.closedAt;
-    await supabase.from("documents").update(dbUpdates).eq("id", id);
+    await supabase.from("documents").update(dbUpdates).eq("id", id).eq("company_id", activeCompanyId);
     setDocuments(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
-  }, []);
+  }, [activeCompanyId]);
 
   const deleteDocument = useCallback(async (id: string) => {
-    await supabase.from("documents").delete().eq("id", id);
+    if (!activeCompanyId) return;
+    await supabase.from("documents").delete().eq("id", id).eq("company_id", activeCompanyId);
     setDocuments(prev => prev.filter(d => d.id !== id));
-  }, []);
+  }, [activeCompanyId]);
 
   return (
     <DocumentsContext.Provider value={{ documents, addDocument, updateDocument, deleteDocument, loading }}>
