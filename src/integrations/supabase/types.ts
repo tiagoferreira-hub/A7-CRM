@@ -41,6 +41,63 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations: {
+        Row: {
+          assigned_to: string | null
+          channel: string
+          company_id: string
+          created_at: string
+          external_id: string | null
+          id: string
+          last_message: string
+          last_message_at: string
+          lead_id: string
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          channel?: string
+          company_id: string
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          last_message?: string
+          last_message_at?: string
+          lead_id: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          channel?: string
+          company_id?: string
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          last_message?: string
+          last_message_at?: string
+          lead_id?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           closed_at: string | null
@@ -117,8 +174,13 @@ export type Database = {
       }
       leads: {
         Row: {
+          assigned_to: string | null
+          channel: string
           company_id: string
           created_at: string
+          external_conversation_id: string | null
+          first_interaction_at: string | null
+          first_message: string
           id: string
           last_interaction: string
           last_message: string
@@ -132,8 +194,13 @@ export type Database = {
           value: number
         }
         Insert: {
+          assigned_to?: string | null
+          channel?: string
           company_id: string
           created_at?: string
+          external_conversation_id?: string | null
+          first_interaction_at?: string | null
+          first_message?: string
           id?: string
           last_interaction?: string
           last_message?: string
@@ -147,8 +214,13 @@ export type Database = {
           value?: number
         }
         Update: {
+          assigned_to?: string | null
+          channel?: string
           company_id?: string
           created_at?: string
+          external_conversation_id?: string | null
+          first_interaction_at?: string | null
+          first_message?: string
           id?: string
           last_interaction?: string
           last_message?: string
@@ -167,6 +239,51 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          company_id: string
+          conversation_id: string
+          created_at: string
+          direction: string
+          id: string
+          sent_at: string
+        }
+        Insert: {
+          body?: string
+          company_id: string
+          conversation_id: string
+          created_at?: string
+          direction?: string
+          id?: string
+          sent_at?: string
+        }
+        Update: {
+          body?: string
+          company_id?: string
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
         ]
