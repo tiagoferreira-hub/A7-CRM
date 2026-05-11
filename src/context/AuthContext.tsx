@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setState({
       user,
       role: (roleData?.role as AppRole) ?? null,
-      companyId: profile?.company_id ?? null,
+      companyId: profile?.company_id ?? roleData?.company_id ?? null,
       displayName: profile?.display_name ?? null,
       loading: false,
     });
