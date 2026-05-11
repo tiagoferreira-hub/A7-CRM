@@ -41,7 +41,7 @@ const Dashboard: React.FC = () => {
   const allInPeriod = filtered;
 
   const byOrigin = useMemo(() => {
-    const map: Record<LeadOrigin, number> = { manual: 0, bio_instagram: 0, anuncio: 0, outro: 0 };
+    const map: Record<LeadOrigin, number> = { manual: 0, bio_instagram: 0, meta: 0, google_ads: 0, indicacao: 0, organico: 0 };
     allInPeriod.forEach((l) => map[l.origin]++);
     return map;
   }, [allInPeriod]);

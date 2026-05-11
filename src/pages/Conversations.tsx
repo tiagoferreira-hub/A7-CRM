@@ -212,9 +212,11 @@ const Conversations: React.FC = () => {
         )}
       </section>
 
-      {openLeadId && (
-        <LeadDetailModal leadId={openLeadId} onClose={() => setOpenLeadId(null)} />
-      )}
+      <LeadDetailModal
+        lead={openLeadId ? leadById[openLeadId] ?? null : null}
+        open={!!openLeadId}
+        onClose={() => setOpenLeadId(null)}
+      />
     </div>
   );
 };
