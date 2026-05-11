@@ -79,6 +79,7 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [activeCompanyId]);
 
   const updateLead = useCallback(async (id: string, updates: Partial<Lead>) => {
+    if (!activeCompanyId) return;
     const dbUpdates: any = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
@@ -90,14 +91,15 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (updates.lastInteraction !== undefined) dbUpdates.last_interaction = updates.lastInteraction;
     if (updates.observations !== undefined) dbUpdates.observations = updates.observations;
 
-    await supabase.from("leads").update(dbUpdates).eq("id", id);
+    await supabase.from("leads").update(dbUpdates).eq("id", id).eq("company_id", activeCompanyId);
     setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
-  }, []);
+  }, [activeCompanyId]);
 
   const moveLead = useCallback(async (id: string, newStage: LeadStage) => {
-    await supabase.from("leads").update({ stage: newStage }).eq("id", id);
+    if (!activeCompanyId) return;
+    await supabase.from("leads").update({ stage: newStage }).eq("id", id).eq("company_id", activeCompanyId);
     setLeads(prev => prev.map(l => l.id === id ? { ...l, stage: newStage } : l));
-  }, []);
+  }, [activeCompanyId]);
 
   return (
     <LeadsContext.Provider value={{ leads, addLead, updateLead, moveLead, loading }}>
