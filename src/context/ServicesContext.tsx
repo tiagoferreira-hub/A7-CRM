@@ -55,14 +55,16 @@ export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [activeCompanyId]);
 
   const updateService = useCallback(async (id: string, name: string) => {
-    await supabase.from("services").update({ name }).eq("id", id);
+    if (!activeCompanyId) return;
+    await supabase.from("services").update({ name }).eq("id", id).eq("company_id", activeCompanyId);
     setServices(prev => prev.map(s => s.id === id ? { ...s, name } : s));
-  }, []);
+  }, [activeCompanyId]);
 
   const deleteService = useCallback(async (id: string) => {
-    await supabase.from("services").delete().eq("id", id);
+    if (!activeCompanyId) return;
+    await supabase.from("services").delete().eq("id", id).eq("company_id", activeCompanyId);
     setServices(prev => prev.filter(s => s.id !== id));
-  }, []);
+  }, [activeCompanyId]);
 
   return (
     <ServicesContext.Provider value={{ services, addService, updateService, deleteService, loading }}>
