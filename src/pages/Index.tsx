@@ -6,9 +6,10 @@ import SellerDashboard from "@/components/crm/SellerDashboard";
 import Settings from "@/pages/Settings";
 import Tasks from "@/pages/Tasks";
 import Documents from "@/pages/Documents";
-import { LayoutGrid, BarChart3, Settings as SettingsIcon, LogOut, ArrowLeft, CheckSquare, FileText, Home } from "lucide-react";
+import Conversations from "@/pages/Conversations";
+import { LayoutGrid, BarChart3, Settings as SettingsIcon, LogOut, ArrowLeft, CheckSquare, FileText, Home, MessageSquare } from "lucide-react";
 
-type Tab = "home" | "pipeline" | "dashboard" | "tasks" | "documents" | "settings";
+type Tab = "home" | "pipeline" | "conversations" | "dashboard" | "tasks" | "documents" | "settings";
 
 const Index: React.FC = () => {
   const { signOut, displayName, user, role, viewAsCompany, setViewAsCompany } = useAuth();
@@ -18,6 +19,7 @@ const Index: React.FC = () => {
   const tabs: { key: Tab; icon: any; label: string; roles?: string[] }[] = [
     ...(isSeller ? [{ key: "home" as Tab, icon: Home, label: "Início" }] : []),
     { key: "pipeline", icon: LayoutGrid, label: "Pipeline" },
+    { key: "conversations", icon: MessageSquare, label: "Conversas" },
     { key: "dashboard", icon: BarChart3, label: "Dashboard", roles: ["owner", "client", "admin"] },
     { key: "tasks", icon: CheckSquare, label: "Tarefas" },
     { key: "documents", icon: FileText, label: "Documentos", roles: ["owner", "client", "admin"] },
@@ -75,6 +77,7 @@ const Index: React.FC = () => {
       <main className="flex-1 overflow-hidden">
         {tab === "home" && isSeller && <SellerDashboard />}
         {tab === "pipeline" && <KanbanBoard />}
+        {tab === "conversations" && <Conversations />}
         {tab === "dashboard" && <Dashboard />}
         {tab === "tasks" && <Tasks />}
         {tab === "documents" && <Documents />}
