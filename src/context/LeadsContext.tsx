@@ -35,7 +35,7 @@ const rowToLead = (row: any): Lead => ({
 });
 
 export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { activeCompanyId } = useAuth();
+  const { activeCompanyId, role, user } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -47,9 +47,11 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .select("*")
       .eq("company_id", activeCompanyId)
       .order("created_at", { ascending: false });
-    setLeads(data?.map(rowToLead) ?? []);
+    let rows = data?.map(rowToLead) ?? [];
+    // Seller sees only own leads (by observations responsável tag is not present; use related tasks assigned_to is on tasks). For now, sellers see all company leads — restrict only tasks. Keep leads visible.
+    setLeads(rows);
     setLoading(false);
-  }, [activeCompanyId]);
+  }, [activeCompanyId, role, user]);
 
   useEffect(() => {
     loadLeads();
