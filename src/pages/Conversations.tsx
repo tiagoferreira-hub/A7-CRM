@@ -23,6 +23,8 @@ const Conversations: React.FC = () => {
   const { conversations, loadMessages, sendMessage, markRead } = useConversations();
   const { leads } = useLeads();
   const { user } = useAuth();
+  const { addTask } = useTasks();
+  const { addAppointment, appointments } = useAppointments();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -32,6 +34,14 @@ const Conversations: React.FC = () => {
   const [filterOrigin, setFilterOrigin] = useState<string>("all");
   const [filterMine, setFilterMine] = useState(false);
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
+  const [taskOpen, setTaskOpen] = useState(false);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDate, setTaskDate] = useState("");
+  const [apptOpen, setApptOpen] = useState(false);
+  const [apptDate, setApptDate] = useState("");
+  const [apptTime, setApptTime] = useState("09:00");
+  const [apptType, setApptType] = useState<AppointmentType>("avaliacao");
+  const [apptNotes, setApptNotes] = useState("");
 
   const leadById = useMemo(() => Object.fromEntries(leads.map(l => [l.id, l])), [leads]);
 
