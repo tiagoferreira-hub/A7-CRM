@@ -2,9 +2,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useConversations, Message } from "@/context/ConversationsContext";
 import { useLeads } from "@/context/LeadsContext";
 import { useAuth } from "@/context/AuthContext";
-import { ORIGIN_LABELS, STAGE_LABELS, LeadOrigin, LeadStage } from "@/types/lead";
-import { Search, Send, Filter, Phone, Circle } from "lucide-react";
+import { useTasks } from "@/context/TasksContext";
+import { useAppointments } from "@/context/AppointmentsContext";
+import { ORIGIN_LABELS, STAGE_LABELS } from "@/types/lead";
+import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_TYPE_OPTIONS, AppointmentType } from "@/types/appointment";
+import { Search, Send, Phone, CheckSquare, CalendarPlus } from "lucide-react";
 import LeadDetailModal from "@/components/crm/LeadDetailModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const formatTime = (iso: string) => {
   const d = new Date(iso);
