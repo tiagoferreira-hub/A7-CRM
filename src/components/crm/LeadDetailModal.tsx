@@ -110,6 +110,23 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
             <Field label="Data de criação" value={formatDateTime(lead.createdAt)} />
 
             <div className="flex justify-end pt-2">
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">Agendamentos</span>
+              {leadAppts.length === 0 ? (
+                <p className="text-sm text-muted-foreground mt-0.5">Nenhum agendamento</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {leadAppts.map(a => (
+                    <li key={a.id} className="text-sm text-foreground flex items-center justify-between border border-border rounded-md px-2.5 py-1.5">
+                      <span>{APPOINTMENT_TYPE_LABELS[a.type]} — {formatDateTime(a.scheduledAt)}</span>
+                      <span className="text-xs text-muted-foreground">{APPOINTMENT_STATUS_LABELS[a.status]}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
               <button
                 onClick={startEdit}
                 className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
