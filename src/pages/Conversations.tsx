@@ -2,9 +2,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useConversations, Message } from "@/context/ConversationsContext";
 import { useLeads } from "@/context/LeadsContext";
 import { useAuth } from "@/context/AuthContext";
-import { ORIGIN_LABELS, STAGE_LABELS, LeadOrigin, LeadStage } from "@/types/lead";
-import { Search, Send, Filter, Phone, Circle } from "lucide-react";
+import { useTasks } from "@/context/TasksContext";
+import { useAppointments } from "@/context/AppointmentsContext";
+import { ORIGIN_LABELS, STAGE_LABELS } from "@/types/lead";
+import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_TYPE_OPTIONS, AppointmentType } from "@/types/appointment";
+import { Search, Send, Phone, CheckSquare, CalendarPlus } from "lucide-react";
 import LeadDetailModal from "@/components/crm/LeadDetailModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const formatTime = (iso: string) => {
   const d = new Date(iso);
@@ -19,6 +23,8 @@ const Conversations: React.FC = () => {
   const { conversations, loadMessages, sendMessage, markRead } = useConversations();
   const { leads } = useLeads();
   const { user } = useAuth();
+  const { addTask } = useTasks();
+  const { addAppointment, appointments } = useAppointments();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -28,6 +34,14 @@ const Conversations: React.FC = () => {
   const [filterOrigin, setFilterOrigin] = useState<string>("all");
   const [filterMine, setFilterMine] = useState(false);
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
+  const [taskOpen, setTaskOpen] = useState(false);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDate, setTaskDate] = useState("");
+  const [apptOpen, setApptOpen] = useState(false);
+  const [apptDate, setApptDate] = useState("");
+  const [apptTime, setApptTime] = useState("09:00");
+  const [apptType, setApptType] = useState<AppointmentType>("avaliacao");
+  const [apptNotes, setApptNotes] = useState("");
 
   const leadById = useMemo(() => Object.fromEntries(leads.map(l => [l.id, l])), [leads]);
 
@@ -61,6 +75,36 @@ const Conversations: React.FC = () => {
     const msg = await sendMessage(selectedId, input);
     if (msg) setMessages(prev => [...prev, msg]);
     setInput("");
+  };
+
+  const leadAppointments = useMemo(
+    () => selectedLead ? appointments.filter(a => a.leadId === selectedLead.id) : [],
+    [appointments, selectedLead]
+  );
+
+  const handleCreateTask = async () => {
+    if (!selectedLead || !taskTitle.trim()) return;
+    await addTask({
+      title: taskTitle.trim(),
+      leadId: selectedLead.id,
+      assignedTo: selected?.assignedTo ?? user?.id ?? "",
+      dueDate: taskDate ? new Date(taskDate).toISOString() : null,
+      status: "todo",
+    });
+    setTaskTitle(""); setTaskDate(""); setTaskOpen(false);
+  };
+
+  const handleCreateAppt = async () => {
+    if (!selectedLead || !apptDate || !apptTime) return;
+    const iso = new Date(`${apptDate}T${apptTime}:00`).toISOString();
+    await addAppointment({
+      leadId: selectedLead.id,
+      assignedTo: selected?.assignedTo ?? user?.id ?? null,
+      scheduledAt: iso,
+      type: apptType,
+      notes: apptNotes,
+    });
+    setApptDate(""); setApptTime("09:00"); setApptType("avaliacao"); setApptNotes(""); setApptOpen(false);
   };
 
   return (
@@ -130,6 +174,12 @@ const Conversations: React.FC = () => {
                   <p className="text-xs text-muted-foreground truncate">{lead.phone}</p>
                   <p className="text-xs text-muted-foreground truncate mt-0.5">{c.lastMessage || "—"}</p>
                   <div className="flex items-center gap-1 mt-1 flex-wrap">
+                    {c.unreadCount > 0 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 font-medium">Não lido</span>
+                    )}
+                    {c.assignedTo && c.unreadCount === 0 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-medium">Em atendimento</span>
+                    )}
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{STAGE_LABELS[lead.stage]}</span>
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{ORIGIN_LABELS[lead.origin]}</span>
                   </div>
@@ -167,10 +217,29 @@ const Conversations: React.FC = () => {
                 </div>
               </button>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setTaskOpen(true)}
+                  className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md border border-border text-foreground hover:bg-accent"
+                ><CheckSquare className="w-3.5 h-3.5" /> Tarefa</button>
+                <button
+                  onClick={() => setApptOpen(true)}
+                  className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90"
+                ><CalendarPlus className="w-3.5 h-3.5" /> Agendar</button>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground">{STAGE_LABELS[selectedLead.stage]}</span>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground">{ORIGIN_LABELS[selectedLead.origin]}</span>
               </div>
             </header>
+
+            {leadAppointments.length > 0 && (
+              <div className="px-5 py-2 border-b border-border bg-card/50 text-xs text-muted-foreground flex flex-wrap gap-2">
+                <span className="font-medium text-foreground">Agendamentos:</span>
+                {leadAppointments.slice(0, 3).map(a => (
+                  <span key={a.id} className="px-2 py-0.5 rounded bg-muted">
+                    {APPOINTMENT_TYPE_LABELS[a.type]} — {new Date(a.scheduledAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div className="flex-1 overflow-y-auto p-5 space-y-2">
               {messages.length === 0 && (
@@ -217,6 +286,66 @@ const Conversations: React.FC = () => {
         open={!!openLeadId}
         onClose={() => setOpenLeadId(null)}
       />
+
+      {/* Quick task dialog */}
+      <Dialog open={taskOpen} onOpenChange={setTaskOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Nova tarefa{selectedLead ? ` — ${selectedLead.name}` : ""}</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Título</label>
+              <input value={taskTitle} onChange={e => setTaskTitle(e.target.value)}
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Vencimento</label>
+              <input type="datetime-local" value={taskDate} onChange={e => setTaskDate(e.target.value)}
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button onClick={() => setTaskOpen(false)} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>
+              <button onClick={handleCreateTask} disabled={!taskTitle.trim()} className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40">Criar</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick appointment dialog */}
+      <Dialog open={apptOpen} onOpenChange={setApptOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Novo agendamento{selectedLead ? ` — ${selectedLead.name}` : ""}</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                <input type="date" value={apptDate} onChange={e => setApptDate(e.target.value)}
+                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Horário</label>
+                <input type="time" value={apptTime} onChange={e => setApptTime(e.target.value)}
+                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Tipo</label>
+              <select value={apptType} onChange={e => setApptType(e.target.value as AppointmentType)}
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring">
+                {APPOINTMENT_TYPE_OPTIONS.map(t => <option key={t} value={t}>{APPOINTMENT_TYPE_LABELS[t]}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Observações</label>
+              <textarea value={apptNotes} onChange={e => setApptNotes(e.target.value)} rows={2}
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none" />
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button onClick={() => setApptOpen(false)} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>
+              <button onClick={handleCreateAppt} disabled={!apptDate || !apptTime} className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40">Criar</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

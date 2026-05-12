@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Lead, STAGE_LABELS, STAGE_ORDER, ORIGIN_LABELS, ORIGIN_OPTIONS, LeadStage, LeadOrigin } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
 import { useServices } from "@/context/ServicesContext";
+import { useAppointments } from "@/context/AppointmentsContext";
+import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_STATUS_LABELS } from "@/types/appointment";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Props {
@@ -22,8 +24,14 @@ const formatDateTime = (s: string) =>
 const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const { updateLead, moveLead } = useLeads();
   const { services } = useServices();
+  const { appointments } = useAppointments();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<Lead>>({});
+
+  const leadAppts = useMemo(
+    () => lead ? appointments.filter(a => a.leadId === lead.id).sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)) : [],
+    [appointments, lead]
+  );
 
   if (!lead) return null;
 
@@ -100,6 +108,22 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
             <Field label="Última mensagem" value={lead.lastMessage} />
             <Field label="Observações" value={lead.observations || "—"} />
             <Field label="Data de criação" value={formatDateTime(lead.createdAt)} />
+
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">Agendamentos</span>
+              {leadAppts.length === 0 ? (
+                <p className="text-sm text-muted-foreground mt-0.5">Nenhum agendamento</p>
+              ) : (
+                <ul className="mt-1 space-y-1">
+                  {leadAppts.map(a => (
+                    <li key={a.id} className="text-sm text-foreground flex items-center justify-between border border-border rounded-md px-2.5 py-1.5">
+                      <span>{APPOINTMENT_TYPE_LABELS[a.type]} — {formatDateTime(a.scheduledAt)}</span>
+                      <span className="text-xs text-muted-foreground">{APPOINTMENT_STATUS_LABELS[a.status]}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
             <div className="flex justify-end pt-2">
               <button

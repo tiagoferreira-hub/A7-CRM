@@ -9,6 +9,7 @@ import { LeadsProvider } from "@/context/LeadsContext";
 import { TasksProvider } from "@/context/TasksContext";
 import { DocumentsProvider } from "@/context/DocumentsContext";
 import { ConversationsProvider } from "@/context/ConversationsContext";
+import { AppointmentsProvider } from "@/context/AppointmentsContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import OwnerPanel from "./pages/OwnerPanel";
@@ -52,12 +53,14 @@ const AppRoutes = () => {
       <LeadsProvider>
         <TasksProvider>
           <DocumentsProvider>
-            <ConversationsProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </ConversationsProvider>
+            <AppointmentsProvider>
+              <ConversationsProvider>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </ConversationsProvider>
+            </AppointmentsProvider>
           </DocumentsProvider>
         </TasksProvider>
       </LeadsProvider>

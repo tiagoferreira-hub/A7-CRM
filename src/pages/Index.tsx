@@ -7,9 +7,10 @@ import Settings from "@/pages/Settings";
 import Tasks from "@/pages/Tasks";
 import Documents from "@/pages/Documents";
 import Conversations from "@/pages/Conversations";
-import { LayoutGrid, BarChart3, Settings as SettingsIcon, LogOut, ArrowLeft, CheckSquare, FileText, Home, MessageSquare } from "lucide-react";
+import Agenda from "@/pages/Agenda";
+import { LayoutGrid, BarChart3, Settings as SettingsIcon, LogOut, ArrowLeft, CheckSquare, FileText, Home, MessageSquare, Calendar } from "lucide-react";
 
-type Tab = "home" | "pipeline" | "conversations" | "dashboard" | "tasks" | "documents" | "settings";
+type Tab = "home" | "pipeline" | "conversations" | "agenda" | "dashboard" | "tasks" | "documents" | "settings";
 
 const Index: React.FC = () => {
   const { signOut, displayName, user, role, viewAsCompany, setViewAsCompany } = useAuth();
@@ -20,6 +21,7 @@ const Index: React.FC = () => {
     ...(isSeller ? [{ key: "home" as Tab, icon: Home, label: "Início" }] : []),
     { key: "pipeline", icon: LayoutGrid, label: "Pipeline" },
     { key: "conversations", icon: MessageSquare, label: "Conversas" },
+    { key: "agenda", icon: Calendar, label: "Agenda" },
     { key: "dashboard", icon: BarChart3, label: "Dashboard", roles: ["owner", "client", "admin"] },
     { key: "tasks", icon: CheckSquare, label: "Tarefas" },
     { key: "documents", icon: FileText, label: "Documentos", roles: ["owner", "client", "admin"] },
@@ -78,6 +80,7 @@ const Index: React.FC = () => {
         {tab === "home" && isSeller && <SellerDashboard />}
         {tab === "pipeline" && <KanbanBoard />}
         {tab === "conversations" && <Conversations />}
+        {tab === "agenda" && <Agenda />}
         {tab === "dashboard" && <Dashboard />}
         {tab === "tasks" && <Tasks />}
         {tab === "documents" && <Documents />}
