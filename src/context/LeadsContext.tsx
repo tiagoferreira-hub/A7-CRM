@@ -5,7 +5,8 @@ import { Lead, LeadStage } from "@/types/lead";
 
 interface LeadsContextType {
   leads: Lead[];
-  addLead: (lead: Omit<Lead, "id" | "createdAt">) => void;
+  addLead: (lead: Omit<Lead, "id" | "createdAt">) => Promise<Lead | null>;
+  findLeadByPhone: (phone: string) => Lead | null;
   updateLead: (id: string, updates: Partial<Lead>) => void;
   moveLead: (id: string, newStage: LeadStage) => void;
   loading: boolean;
