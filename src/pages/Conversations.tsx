@@ -286,6 +286,66 @@ const Conversations: React.FC = () => {
         open={!!openLeadId}
         onClose={() => setOpenLeadId(null)}
       />
+
+      {/* Quick task dialog */}
+      <Dialog open={taskOpen} onOpenChange={setTaskOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Nova tarefa{selectedLead ? ` — ${selectedLead.name}` : ""}</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Título</label>
+              <input value={taskTitle} onChange={e => setTaskTitle(e.target.value)}
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Vencimento</label>
+              <input type="datetime-local" value={taskDate} onChange={e => setTaskDate(e.target.value)}
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button onClick={() => setTaskOpen(false)} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>
+              <button onClick={handleCreateTask} disabled={!taskTitle.trim()} className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40">Criar</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick appointment dialog */}
+      <Dialog open={apptOpen} onOpenChange={setApptOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Novo agendamento{selectedLead ? ` — ${selectedLead.name}` : ""}</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                <input type="date" value={apptDate} onChange={e => setApptDate(e.target.value)}
+                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Horário</label>
+                <input type="time" value={apptTime} onChange={e => setApptTime(e.target.value)}
+                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Tipo</label>
+              <select value={apptType} onChange={e => setApptType(e.target.value as AppointmentType)}
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring">
+                {APPOINTMENT_TYPE_OPTIONS.map(t => <option key={t} value={t}>{APPOINTMENT_TYPE_LABELS[t]}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Observações</label>
+              <textarea value={apptNotes} onChange={e => setApptNotes(e.target.value)} rows={2}
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none" />
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button onClick={() => setApptOpen(false)} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>
+              <button onClick={handleCreateAppt} disabled={!apptDate || !apptTime} className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40">Criar</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
