@@ -58,8 +58,19 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     loadLeads();
   }, [loadLeads]);
 
-  const addLead = useCallback(async (lead: Omit<Lead, "id" | "createdAt">) => {
-    if (!activeCompanyId) return;
+  const normalizePhone = (p: string) => (p || "").replace(/\D/g, "");
+
+  const findLeadByPhone = useCallback((phone: string): Lead | null => {
+    const target = normalizePhone(phone);
+    if (!target) return null;
+    return leads.find(l => normalizePhone(l.phone) === target) ?? null;
+  }, [leads]);
+
+  const addLead = useCallback(async (lead: Omit<Lead, "id" | "createdAt">): Promise<Lead | null> => {
+    if (!activeCompanyId) return null;
+    // Dedupe by phone within company
+    const existing = leads.find(l => normalizePhone(l.phone) === normalizePhone(lead.phone));
+    if (existing) return existing;
     const { data } = await supabase
       .from("leads")
       .insert({
@@ -76,8 +87,13 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       })
       .select()
       .single();
-    if (data) setLeads(prev => [rowToLead(data), ...prev]);
-  }, [activeCompanyId]);
+    if (data) {
+      const created = rowToLead(data);
+      setLeads(prev => [created, ...prev]);
+      return created;
+    }
+    return null;
+  }, [activeCompanyId, leads]);
 
   const updateLead = useCallback(async (id: string, updates: Partial<Lead>) => {
     if (!activeCompanyId) return;
