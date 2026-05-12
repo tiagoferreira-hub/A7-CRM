@@ -119,7 +119,7 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [activeCompanyId]);
 
   return (
-    <LeadsContext.Provider value={{ leads, addLead, updateLead, moveLead, loading }}>
+    <LeadsContext.Provider value={{ leads, addLead, findLeadByPhone, updateLead, moveLead, loading }}>
       {children}
     </LeadsContext.Provider>
   );
