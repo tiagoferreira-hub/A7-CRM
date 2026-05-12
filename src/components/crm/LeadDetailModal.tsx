@@ -109,7 +109,6 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
             <Field label="Observações" value={lead.observations || "—"} />
             <Field label="Data de criação" value={formatDateTime(lead.createdAt)} />
 
-            <div className="flex justify-end pt-2">
             <div>
               <span className="text-xs font-medium text-muted-foreground">Agendamentos</span>
               {leadAppts.length === 0 ? (
