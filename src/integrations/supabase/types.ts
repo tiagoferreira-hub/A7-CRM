@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          appointment_type: string
+          assigned_to: string | null
+          company_id: string
+          created_at: string
+          id: string
+          lead_id: string
+          notes: string
+          scheduled_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_type?: string
+          assigned_to?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          notes?: string
+          scheduled_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_type?: string
+          assigned_to?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          notes?: string
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           created_at: string
