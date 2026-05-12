@@ -77,6 +77,36 @@ const Conversations: React.FC = () => {
     setInput("");
   };
 
+  const leadAppointments = useMemo(
+    () => selectedLead ? appointments.filter(a => a.leadId === selectedLead.id) : [],
+    [appointments, selectedLead]
+  );
+
+  const handleCreateTask = async () => {
+    if (!selectedLead || !taskTitle.trim()) return;
+    await addTask({
+      title: taskTitle.trim(),
+      leadId: selectedLead.id,
+      assignedTo: selected?.assignedTo ?? user?.id ?? "",
+      dueDate: taskDate ? new Date(taskDate).toISOString() : null,
+      status: "todo",
+    });
+    setTaskTitle(""); setTaskDate(""); setTaskOpen(false);
+  };
+
+  const handleCreateAppt = async () => {
+    if (!selectedLead || !apptDate || !apptTime) return;
+    const iso = new Date(`${apptDate}T${apptTime}:00`).toISOString();
+    await addAppointment({
+      leadId: selectedLead.id,
+      assignedTo: selected?.assignedTo ?? user?.id ?? null,
+      scheduledAt: iso,
+      type: apptType,
+      notes: apptNotes,
+    });
+    setApptDate(""); setApptTime("09:00"); setApptType("avaliacao"); setApptNotes(""); setApptOpen(false);
+  };
+
   return (
     <div className="flex h-full bg-background">
       {/* Sidebar */}
