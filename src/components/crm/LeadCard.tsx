@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { Lead, ORIGIN_LABELS } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
 import { useServices } from "@/context/ServicesContext";
-import { Phone, MessageSquare, Pencil, Check, X } from "lucide-react";
+import { useTags } from "@/context/TagsContext";
+import { useCompanyMembers } from "@/hooks/useCompanyMembers";
+import { Phone, MessageSquare, Pencil, Check, X, User } from "lucide-react";
 
 interface LeadCardProps {
   lead: Lead;
@@ -27,6 +29,10 @@ const originColors: Record<string, string> = {
 const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
   const { updateLead } = useLeads();
   const { services } = useServices();
+  const { tagsForLead } = useTags();
+  const members = useCompanyMembers();
+  const assignee = lead.assignedTo ? members.find(m => m.userId === lead.assignedTo) : null;
+  const leadTags = tagsForLead(lead.id);
   const [editing, setEditing] = useState(false);
   const [editService, setEditService] = useState(lead.service);
   const [editValue, setEditValue] = useState(lead.value.toString());
@@ -71,10 +77,24 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
         <span>{lead.phone}</span>
       </div>
 
-      <div className="flex items-center gap-2 mb-2">
-        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${originColors[lead.origin]}`}>
+      <div className="flex items-center gap-1.5 flex-wrap mb-2">
+        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${originColors[lead.origin] ?? "bg-muted text-muted-foreground"}`}>
           {ORIGIN_LABELS[lead.origin]}
         </span>
+        {leadTags.map(t => (
+          <span key={t.id} className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: `${t.color}22`, color: t.color }}>
+            {t.name}
+          </span>
+        ))}
+        {assignee ? (
+          <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground" title={assignee.displayName}>
+            <span className="w-4 h-4 rounded-full bg-primary/15 text-primary flex items-center justify-center font-semibold">
+              {assignee.displayName.charAt(0).toUpperCase()}
+            </span>
+          </span>
+        ) : (
+          <span className="ml-auto text-[10px] text-muted-foreground flex items-center gap-1"><User className="w-3 h-3" />—</span>
+        )}
       </div>
 
       {editing ? (

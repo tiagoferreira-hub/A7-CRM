@@ -1,19 +1,43 @@
 import React, { useState, useMemo } from "react";
 import { useLeads } from "@/context/LeadsContext";
+import { useTags } from "@/context/TagsContext";
+import { useFollowUps } from "@/context/FollowUpsContext";
+import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { Lead, LeadOrigin, LeadStage, STAGE_ORDER, ORIGIN_LABELS, ORIGIN_OPTIONS, STAGE_LABELS } from "@/types/lead";
 import KanbanColumn from "./KanbanColumn";
 import LeadDetailModal from "./LeadDetailModal";
 import NewLeadModal from "./NewLeadModal";
+import LossReasonModal from "./LossReasonModal";
 import { Search, Plus, Filter } from "lucide-react";
 
 const KanbanBoard: React.FC = () => {
-  const { leads } = useLeads();
+  const { leads, moveLead } = useLeads();
+  const { tags, assignments } = useTags();
+  const { followUps } = useFollowUps();
+  const members = useCompanyMembers();
   const [search, setSearch] = useState("");
   const [filterOrigin, setFilterOrigin] = useState<LeadOrigin | "">("");
   const [filterStage, setFilterStage] = useState<LeadStage | "">("");
+  const [filterAssignee, setFilterAssignee] = useState<string>("");
+  const [filterTag, setFilterTag] = useState<string>("");
+  const [filterPendingFup, setFilterPendingFup] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showNewLead, setShowNewLead] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [pendingLoss, setPendingLoss] = useState<{ leadId: string } | null>(null);
+
+  const leadsWithPendingFup = useMemo(() => new Set(
+    followUps.filter(f => f.status !== "concluido").map(f => f.leadId)
+  ), [followUps]);
+
+  const tagsByLead = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    assignments.forEach(a => {
+      if (!map[a.leadId]) map[a.leadId] = new Set();
+      map[a.leadId].add(a.tagId);
+    });
+    return map;
+  }, [assignments]);
 
   const filtered = useMemo(() => {
     return leads.filter((l) => {
@@ -23,9 +47,13 @@ const KanbanBoard: React.FC = () => {
       }
       if (filterOrigin && l.origin !== filterOrigin) return false;
       if (filterStage && l.stage !== filterStage) return false;
+      if (filterAssignee === "__none__" && l.assignedTo) return false;
+      if (filterAssignee && filterAssignee !== "__none__" && l.assignedTo !== filterAssignee) return false;
+      if (filterTag && !(tagsByLead[l.id]?.has(filterTag))) return false;
+      if (filterPendingFup && !leadsWithPendingFup.has(l.id)) return false;
       return true;
     });
-  }, [leads, search, filterOrigin, filterStage]);
+  }, [leads, search, filterOrigin, filterStage, filterAssignee, filterTag, filterPendingFup, tagsByLead, leadsWithPendingFup]);
 
   const leadsByStage = useMemo(() => {
     const map: Record<LeadStage, Lead[]> = {} as any;
@@ -69,34 +97,35 @@ const KanbanBoard: React.FC = () => {
 
       {/* Filters */}
       {showFilters && (
-        <div className="flex items-center gap-3 px-6 py-3 bg-card border-b border-border">
-          <select
-            className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-            value={filterOrigin}
-            onChange={(e) => setFilterOrigin(e.target.value as LeadOrigin | "")}
-          >
+        <div className="flex items-center gap-2 flex-wrap px-6 py-3 bg-card border-b border-border">
+          <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+            value={filterOrigin} onChange={(e) => setFilterOrigin(e.target.value as LeadOrigin | "")}>
             <option value="">Todas as origens</option>
-            {ORIGIN_OPTIONS.map((o) => (
-              <option key={o} value={o}>{ORIGIN_LABELS[o]}</option>
-            ))}
+            {ORIGIN_OPTIONS.map((o) => <option key={o} value={o}>{ORIGIN_LABELS[o]}</option>)}
           </select>
-          <select
-            className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-            value={filterStage}
-            onChange={(e) => setFilterStage(e.target.value as LeadStage | "")}
-          >
+          <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+            value={filterStage} onChange={(e) => setFilterStage(e.target.value as LeadStage | "")}>
             <option value="">Todas as etapas</option>
-            {STAGE_ORDER.map((s) => (
-              <option key={s} value={s}>{STAGE_LABELS[s]}</option>
-            ))}
+            {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
           </select>
-          {(filterOrigin || filterStage) && (
-            <button
-              onClick={() => { setFilterOrigin(""); setFilterStage(""); }}
-              className="text-xs text-primary hover:underline"
-            >
-              Limpar filtros
-            </button>
+          <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+            value={filterAssignee} onChange={(e) => setFilterAssignee(e.target.value)}>
+            <option value="">Todos os responsáveis</option>
+            <option value="__none__">Sem responsável</option>
+            {members.map(m => <option key={m.userId} value={m.userId}>{m.displayName}</option>)}
+          </select>
+          <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+            value={filterTag} onChange={(e) => setFilterTag(e.target.value)}>
+            <option value="">Todas as tags</option>
+            {tags.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+            <input type="checkbox" checked={filterPendingFup} onChange={e => setFilterPendingFup(e.target.checked)} />
+            Follow-up pendente
+          </label>
+          {(filterOrigin || filterStage || filterAssignee || filterTag || filterPendingFup) && (
+            <button onClick={() => { setFilterOrigin(""); setFilterStage(""); setFilterAssignee(""); setFilterTag(""); setFilterPendingFup(false); }}
+              className="text-xs text-primary hover:underline">Limpar filtros</button>
           )}
         </div>
       )}
@@ -110,6 +139,10 @@ const KanbanBoard: React.FC = () => {
               stage={stage}
               leads={leadsByStage[stage]}
               onOpenDetail={setSelectedLead}
+              onDropLead={(leadId, s) => {
+                if (s === "perdido") setPendingLoss({ leadId });
+                else moveLead(leadId, s);
+              }}
             />
           ))}
         </div>
@@ -121,6 +154,11 @@ const KanbanBoard: React.FC = () => {
         onClose={() => setSelectedLead(null)}
       />
       <NewLeadModal open={showNewLead} onClose={() => setShowNewLead(false)} />
+      <LossReasonModal
+        open={!!pendingLoss}
+        onClose={() => setPendingLoss(null)}
+        onConfirm={(reason) => { if (pendingLoss) moveLead(pendingLoss.leadId, "perdido", reason); setPendingLoss(null); }}
+      />
     </div>
   );
 };

@@ -4,9 +4,10 @@ import { useLeads } from "@/context/LeadsContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTasks } from "@/context/TasksContext";
 import { useAppointments } from "@/context/AppointmentsContext";
+import { useFollowUps } from "@/context/FollowUpsContext";
 import { ORIGIN_LABELS, STAGE_LABELS } from "@/types/lead";
 import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_TYPE_OPTIONS, AppointmentType } from "@/types/appointment";
-import { Search, Send, Phone, CheckSquare, CalendarPlus } from "lucide-react";
+import { Search, Send, Phone, CheckSquare, CalendarPlus, Clock } from "lucide-react";
 import LeadDetailModal from "@/components/crm/LeadDetailModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -25,6 +26,7 @@ const Conversations: React.FC = () => {
   const { user } = useAuth();
   const { addTask } = useTasks();
   const { addAppointment, appointments } = useAppointments();
+  const { addFollowUp } = useFollowUps();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -42,6 +44,10 @@ const Conversations: React.FC = () => {
   const [apptTime, setApptTime] = useState("09:00");
   const [apptType, setApptType] = useState<AppointmentType>("avaliacao");
   const [apptNotes, setApptNotes] = useState("");
+  const [fupOpen, setFupOpen] = useState(false);
+  const [fupDate, setFupDate] = useState("");
+  const [fupTime, setFupTime] = useState("09:00");
+  const [fupNotes, setFupNotes] = useState("");
 
   const leadById = useMemo(() => Object.fromEntries(leads.map(l => [l.id, l])), [leads]);
 
@@ -218,6 +224,10 @@ const Conversations: React.FC = () => {
               </button>
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => setFupOpen(true)}
+                  className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md border border-border text-foreground hover:bg-accent"
+                ><Clock className="w-3.5 h-3.5" /> Follow-up</button>
+                <button
                   onClick={() => setTaskOpen(true)}
                   className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md border border-border text-foreground hover:bg-accent"
                 ><CheckSquare className="w-3.5 h-3.5" /> Tarefa</button>
@@ -342,6 +352,46 @@ const Conversations: React.FC = () => {
             <div className="flex gap-2 justify-end pt-2">
               <button onClick={() => setApptOpen(false)} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>
               <button onClick={handleCreateAppt} disabled={!apptDate || !apptTime} className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40">Criar</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick follow-up dialog */}
+      <Dialog open={fupOpen} onOpenChange={setFupOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Novo follow-up{selectedLead ? ` — ${selectedLead.name}` : ""}</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                <input type="date" value={fupDate} onChange={e => setFupDate(e.target.value)}
+                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Horário</label>
+                <input type="time" value={fupTime} onChange={e => setFupTime(e.target.value)}
+                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Observação</label>
+              <textarea value={fupNotes} onChange={e => setFupNotes(e.target.value)} rows={2}
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none" />
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button onClick={() => setFupOpen(false)} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>
+              <button onClick={async () => {
+                if (!selectedLead || !fupDate) return;
+                await addFollowUp({
+                  leadId: selectedLead.id,
+                  scheduledAt: new Date(`${fupDate}T${fupTime}:00`).toISOString(),
+                  notes: fupNotes,
+                  assignedTo: selected?.assignedTo ?? user?.id ?? null,
+                });
+                setFupOpen(false); setFupDate(""); setFupTime("09:00"); setFupNotes("");
+              }} disabled={!selectedLead || !fupDate}
+                className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40">Criar</button>
             </div>
           </div>
         </DialogContent>
