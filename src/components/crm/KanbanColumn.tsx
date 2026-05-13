@@ -7,6 +7,7 @@ interface KanbanColumnProps {
   stage: LeadStage;
   leads: Lead[];
   onOpenDetail: (lead: Lead) => void;
+  onDropLead?: (leadId: string, stage: LeadStage) => void;
 }
 
 const stageColors: Record<LeadStage, string> = {
@@ -22,7 +23,7 @@ const stageColors: Record<LeadStage, string> = {
 
 const highlightedStages: LeadStage[] = ["qualificado", "agendado"];
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, leads, onOpenDetail }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, leads, onOpenDetail, onDropLead }) => {
   const { moveLead } = useLeads();
   const isHighlighted = highlightedStages.includes(stage);
 
@@ -39,7 +40,9 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, leads, onOpenDetail 
     e.preventDefault();
     e.currentTarget.classList.remove("ring-2", "ring-primary/30");
     const leadId = e.dataTransfer.getData("leadId");
-    if (leadId) moveLead(leadId, stage);
+    if (!leadId) return;
+    if (onDropLead) onDropLead(leadId, stage);
+    else moveLead(leadId, stage);
   };
 
   return (
