@@ -356,6 +356,46 @@ const Conversations: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Quick follow-up dialog */}
+      <Dialog open={fupOpen} onOpenChange={setFupOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Novo follow-up{selectedLead ? ` — ${selectedLead.name}` : ""}</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                <input type="date" value={fupDate} onChange={e => setFupDate(e.target.value)}
+                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Horário</label>
+                <input type="time" value={fupTime} onChange={e => setFupTime(e.target.value)}
+                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Observação</label>
+              <textarea value={fupNotes} onChange={e => setFupNotes(e.target.value)} rows={2}
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none" />
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button onClick={() => setFupOpen(false)} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>
+              <button onClick={async () => {
+                if (!selectedLead || !fupDate) return;
+                await addFollowUp({
+                  leadId: selectedLead.id,
+                  scheduledAt: new Date(`${fupDate}T${fupTime}:00`).toISOString(),
+                  notes: fupNotes,
+                  assignedTo: selected?.assignedTo ?? user?.id ?? null,
+                });
+                setFupOpen(false); setFupDate(""); setFupTime("09:00"); setFupNotes("");
+              }} disabled={!selectedLead || !fupDate}
+                className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40">Criar</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
