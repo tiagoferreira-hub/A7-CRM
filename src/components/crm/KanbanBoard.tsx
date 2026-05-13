@@ -7,10 +7,11 @@ import { Lead, LeadOrigin, LeadStage, STAGE_ORDER, ORIGIN_LABELS, ORIGIN_OPTIONS
 import KanbanColumn from "./KanbanColumn";
 import LeadDetailModal from "./LeadDetailModal";
 import NewLeadModal from "./NewLeadModal";
+import LossReasonModal from "./LossReasonModal";
 import { Search, Plus, Filter } from "lucide-react";
 
 const KanbanBoard: React.FC = () => {
-  const { leads } = useLeads();
+  const { leads, moveLead } = useLeads();
   const { tags, assignments } = useTags();
   const { followUps } = useFollowUps();
   const members = useCompanyMembers();
@@ -23,6 +24,7 @@ const KanbanBoard: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showNewLead, setShowNewLead] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [pendingLoss, setPendingLoss] = useState<{ leadId: string } | null>(null);
 
   const leadsWithPendingFup = useMemo(() => new Set(
     followUps.filter(f => f.status !== "concluido").map(f => f.leadId)
@@ -137,6 +139,10 @@ const KanbanBoard: React.FC = () => {
               stage={stage}
               leads={leadsByStage[stage]}
               onOpenDetail={setSelectedLead}
+              onDropLead={(leadId, s) => {
+                if (s === "perdido") setPendingLoss({ leadId });
+                else moveLead(leadId, s);
+              }}
             />
           ))}
         </div>
@@ -148,6 +154,11 @@ const KanbanBoard: React.FC = () => {
         onClose={() => setSelectedLead(null)}
       />
       <NewLeadModal open={showNewLead} onClose={() => setShowNewLead(false)} />
+      <LossReasonModal
+        open={!!pendingLoss}
+        onClose={() => setPendingLoss(null)}
+        onConfirm={(reason) => { if (pendingLoss) moveLead(pendingLoss.leadId, "perdido", reason); setPendingLoss(null); }}
+      />
     </div>
   );
 };
