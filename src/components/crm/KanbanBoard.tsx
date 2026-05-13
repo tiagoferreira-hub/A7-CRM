@@ -95,34 +95,35 @@ const KanbanBoard: React.FC = () => {
 
       {/* Filters */}
       {showFilters && (
-        <div className="flex items-center gap-3 px-6 py-3 bg-card border-b border-border">
-          <select
-            className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-            value={filterOrigin}
-            onChange={(e) => setFilterOrigin(e.target.value as LeadOrigin | "")}
-          >
+        <div className="flex items-center gap-2 flex-wrap px-6 py-3 bg-card border-b border-border">
+          <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+            value={filterOrigin} onChange={(e) => setFilterOrigin(e.target.value as LeadOrigin | "")}>
             <option value="">Todas as origens</option>
-            {ORIGIN_OPTIONS.map((o) => (
-              <option key={o} value={o}>{ORIGIN_LABELS[o]}</option>
-            ))}
+            {ORIGIN_OPTIONS.map((o) => <option key={o} value={o}>{ORIGIN_LABELS[o]}</option>)}
           </select>
-          <select
-            className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-            value={filterStage}
-            onChange={(e) => setFilterStage(e.target.value as LeadStage | "")}
-          >
+          <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+            value={filterStage} onChange={(e) => setFilterStage(e.target.value as LeadStage | "")}>
             <option value="">Todas as etapas</option>
-            {STAGE_ORDER.map((s) => (
-              <option key={s} value={s}>{STAGE_LABELS[s]}</option>
-            ))}
+            {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
           </select>
-          {(filterOrigin || filterStage) && (
-            <button
-              onClick={() => { setFilterOrigin(""); setFilterStage(""); }}
-              className="text-xs text-primary hover:underline"
-            >
-              Limpar filtros
-            </button>
+          <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+            value={filterAssignee} onChange={(e) => setFilterAssignee(e.target.value)}>
+            <option value="">Todos os responsáveis</option>
+            <option value="__none__">Sem responsável</option>
+            {members.map(m => <option key={m.userId} value={m.userId}>{m.displayName}</option>)}
+          </select>
+          <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+            value={filterTag} onChange={(e) => setFilterTag(e.target.value)}>
+            <option value="">Todas as tags</option>
+            {tags.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+            <input type="checkbox" checked={filterPendingFup} onChange={e => setFilterPendingFup(e.target.checked)} />
+            Follow-up pendente
+          </label>
+          {(filterOrigin || filterStage || filterAssignee || filterTag || filterPendingFup) && (
+            <button onClick={() => { setFilterOrigin(""); setFilterStage(""); setFilterAssignee(""); setFilterTag(""); setFilterPendingFup(false); }}
+              className="text-xs text-primary hover:underline">Limpar filtros</button>
           )}
         </div>
       )}
