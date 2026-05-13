@@ -10,6 +10,9 @@ import { TasksProvider } from "@/context/TasksContext";
 import { DocumentsProvider } from "@/context/DocumentsContext";
 import { ConversationsProvider } from "@/context/ConversationsContext";
 import { AppointmentsProvider } from "@/context/AppointmentsContext";
+import { FollowUpsProvider } from "@/context/FollowUpsContext";
+import { CampaignsProvider } from "@/context/CampaignsContext";
+import { TagsProvider } from "@/context/TagsContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import OwnerPanel from "./pages/OwnerPanel";
@@ -51,18 +54,24 @@ const AppRoutes = () => {
   return (
     <ServicesProvider>
       <LeadsProvider>
-        <TasksProvider>
-          <DocumentsProvider>
-            <AppointmentsProvider>
-              <ConversationsProvider>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </ConversationsProvider>
-            </AppointmentsProvider>
-          </DocumentsProvider>
-        </TasksProvider>
+        <TagsProvider>
+          <TasksProvider>
+            <DocumentsProvider>
+              <AppointmentsProvider>
+                <FollowUpsProvider>
+                  <CampaignsProvider>
+                    <ConversationsProvider>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </ConversationsProvider>
+                  </CampaignsProvider>
+                </FollowUpsProvider>
+              </AppointmentsProvider>
+            </DocumentsProvider>
+          </TasksProvider>
+        </TagsProvider>
       </LeadsProvider>
     </ServicesProvider>
   );
