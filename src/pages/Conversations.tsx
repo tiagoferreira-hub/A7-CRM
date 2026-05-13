@@ -4,9 +4,10 @@ import { useLeads } from "@/context/LeadsContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTasks } from "@/context/TasksContext";
 import { useAppointments } from "@/context/AppointmentsContext";
+import { useFollowUps } from "@/context/FollowUpsContext";
 import { ORIGIN_LABELS, STAGE_LABELS } from "@/types/lead";
 import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_TYPE_OPTIONS, AppointmentType } from "@/types/appointment";
-import { Search, Send, Phone, CheckSquare, CalendarPlus } from "lucide-react";
+import { Search, Send, Phone, CheckSquare, CalendarPlus, Clock } from "lucide-react";
 import LeadDetailModal from "@/components/crm/LeadDetailModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -25,6 +26,7 @@ const Conversations: React.FC = () => {
   const { user } = useAuth();
   const { addTask } = useTasks();
   const { addAppointment, appointments } = useAppointments();
+  const { addFollowUp } = useFollowUps();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -42,6 +44,10 @@ const Conversations: React.FC = () => {
   const [apptTime, setApptTime] = useState("09:00");
   const [apptType, setApptType] = useState<AppointmentType>("avaliacao");
   const [apptNotes, setApptNotes] = useState("");
+  const [fupOpen, setFupOpen] = useState(false);
+  const [fupDate, setFupDate] = useState("");
+  const [fupTime, setFupTime] = useState("09:00");
+  const [fupNotes, setFupNotes] = useState("");
 
   const leadById = useMemo(() => Object.fromEntries(leads.map(l => [l.id, l])), [leads]);
 
@@ -217,6 +223,10 @@ const Conversations: React.FC = () => {
                 </div>
               </button>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setFupOpen(true)}
+                  className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md border border-border text-foreground hover:bg-accent"
+                ><Clock className="w-3.5 h-3.5" /> Follow-up</button>
                 <button
                   onClick={() => setTaskOpen(true)}
                   className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md border border-border text-foreground hover:bg-accent"
