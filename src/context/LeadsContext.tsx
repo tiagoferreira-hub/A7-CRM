@@ -8,7 +8,7 @@ interface LeadsContextType {
   addLead: (lead: Omit<Lead, "id" | "createdAt">) => Promise<Lead | null>;
   findLeadByPhone: (phone: string) => Lead | null;
   updateLead: (id: string, updates: Partial<Lead>) => void;
-  moveLead: (id: string, newStage: LeadStage) => void;
+  moveLead: (id: string, newStage: LeadStage, lossReason?: string | null) => void;
   loading: boolean;
 }
 
@@ -116,10 +116,12 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
   }, [activeCompanyId]);
 
-  const moveLead = useCallback(async (id: string, newStage: LeadStage) => {
+  const moveLead = useCallback(async (id: string, newStage: LeadStage, lossReason?: string | null) => {
     if (!activeCompanyId) return;
-    await supabase.from("leads").update({ stage: newStage }).eq("id", id).eq("company_id", activeCompanyId);
-    setLeads(prev => prev.map(l => l.id === id ? { ...l, stage: newStage } : l));
+    const upd: any = { stage: newStage };
+    if (newStage === "perdido" && lossReason !== undefined) upd.loss_reason = lossReason;
+    await supabase.from("leads").update(upd).eq("id", id).eq("company_id", activeCompanyId);
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, stage: newStage, lossReason: upd.loss_reason ?? l.lossReason } : l));
   }, [activeCompanyId]);
 
   return (
