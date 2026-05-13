@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useLeads } from "@/context/LeadsContext";
+import { useTags } from "@/context/TagsContext";
+import { useFollowUps } from "@/context/FollowUpsContext";
+import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { Lead, LeadOrigin, LeadStage, STAGE_ORDER, ORIGIN_LABELS, ORIGIN_OPTIONS, STAGE_LABELS } from "@/types/lead";
 import KanbanColumn from "./KanbanColumn";
 import LeadDetailModal from "./LeadDetailModal";
@@ -8,12 +11,31 @@ import { Search, Plus, Filter } from "lucide-react";
 
 const KanbanBoard: React.FC = () => {
   const { leads } = useLeads();
+  const { tags, assignments } = useTags();
+  const { followUps } = useFollowUps();
+  const members = useCompanyMembers();
   const [search, setSearch] = useState("");
   const [filterOrigin, setFilterOrigin] = useState<LeadOrigin | "">("");
   const [filterStage, setFilterStage] = useState<LeadStage | "">("");
+  const [filterAssignee, setFilterAssignee] = useState<string>("");
+  const [filterTag, setFilterTag] = useState<string>("");
+  const [filterPendingFup, setFilterPendingFup] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showNewLead, setShowNewLead] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+
+  const leadsWithPendingFup = useMemo(() => new Set(
+    followUps.filter(f => f.status !== "concluido").map(f => f.leadId)
+  ), [followUps]);
+
+  const tagsByLead = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    assignments.forEach(a => {
+      if (!map[a.leadId]) map[a.leadId] = new Set();
+      map[a.leadId].add(a.tagId);
+    });
+    return map;
+  }, [assignments]);
 
   const filtered = useMemo(() => {
     return leads.filter((l) => {
@@ -23,9 +45,13 @@ const KanbanBoard: React.FC = () => {
       }
       if (filterOrigin && l.origin !== filterOrigin) return false;
       if (filterStage && l.stage !== filterStage) return false;
+      if (filterAssignee === "__none__" && l.assignedTo) return false;
+      if (filterAssignee && filterAssignee !== "__none__" && l.assignedTo !== filterAssignee) return false;
+      if (filterTag && !(tagsByLead[l.id]?.has(filterTag))) return false;
+      if (filterPendingFup && !leadsWithPendingFup.has(l.id)) return false;
       return true;
     });
-  }, [leads, search, filterOrigin, filterStage]);
+  }, [leads, search, filterOrigin, filterStage, filterAssignee, filterTag, filterPendingFup, tagsByLead, leadsWithPendingFup]);
 
   const leadsByStage = useMemo(() => {
     const map: Record<LeadStage, Lead[]> = {} as any;
