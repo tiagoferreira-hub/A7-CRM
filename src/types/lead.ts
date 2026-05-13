@@ -35,6 +35,7 @@ export interface Lead {
   firstMessage?: string;
   firstInteractionAt?: string | null;
   externalConversationId?: string | null;
+  lossReason?: string | null;
 }
 
 export const STAGE_LABELS: Record<LeadStage, string> = {

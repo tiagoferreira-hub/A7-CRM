@@ -33,6 +33,8 @@ const rowToLead = (row: any): Lead => ({
   lastInteraction: row.last_interaction,
   observations: row.observations,
   createdAt: row.created_at,
+  assignedTo: row.assigned_to ?? null,
+  lossReason: row.loss_reason ?? null,
 });
 
 export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -107,6 +109,8 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (updates.lastMessage !== undefined) dbUpdates.last_message = updates.lastMessage;
     if (updates.lastInteraction !== undefined) dbUpdates.last_interaction = updates.lastInteraction;
     if (updates.observations !== undefined) dbUpdates.observations = updates.observations;
+    if ((updates as any).assignedTo !== undefined) dbUpdates.assigned_to = (updates as any).assignedTo;
+    if ((updates as any).lossReason !== undefined) dbUpdates.loss_reason = (updates as any).lossReason;
 
     await supabase.from("leads").update(dbUpdates).eq("id", id).eq("company_id", activeCompanyId);
     setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
