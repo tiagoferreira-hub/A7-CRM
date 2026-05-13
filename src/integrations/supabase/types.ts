@@ -53,6 +53,48 @@ export type Database = {
         }
         Relationships: []
       }
+      campaigns: {
+        Row: {
+          channel: string
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+          payload: Json
+          replied_count: number
+          scheduled_at: string | null
+          sent_count: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          channel?: string
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+          payload?: Json
+          replied_count?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          payload?: Json
+          replied_count?: number
+          scheduled_at?: string | null
+          sent_count?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           created_at: string
@@ -181,6 +223,48 @@ export type Database = {
           },
         ]
       }
+      follow_ups: {
+        Row: {
+          assigned_to: string | null
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          lead_id: string
+          notes: string
+          scheduled_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_id: string
+          notes?: string
+          scheduled_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_id?: string
+          notes?: string
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           created_at: string
@@ -211,6 +295,84 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_history: {
+        Row: {
+          actor_id: string | null
+          company_id: string
+          created_at: string
+          event_type: string
+          id: string
+          lead_id: string
+          payload: Json
+        }
+        Insert: {
+          actor_id?: string | null
+          company_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          lead_id: string
+          payload?: Json
+        }
+        Update: {
+          actor_id?: string | null
+          company_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          lead_id?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
+      lead_tag_assignments: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          lead_id: string
+          tag_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          tag_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          tag_id?: string
+        }
+        Relationships: []
+      }
+      lead_tags: {
+        Row: {
+          color: string
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           assigned_to: string | null
@@ -223,6 +385,7 @@ export type Database = {
           id: string
           last_interaction: string
           last_message: string
+          loss_reason: string | null
           name: string
           observations: string
           origin: string
@@ -243,6 +406,7 @@ export type Database = {
           id?: string
           last_interaction?: string
           last_message?: string
+          loss_reason?: string | null
           name: string
           observations?: string
           origin?: string
@@ -263,6 +427,7 @@ export type Database = {
           id?: string
           last_interaction?: string
           last_message?: string
+          loss_reason?: string | null
           name?: string
           observations?: string
           origin?: string
