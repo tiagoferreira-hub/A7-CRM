@@ -70,3 +70,46 @@ export interface LeadHistoryEvent {
   payload: any;
   createdAt: string;
 }
+
+export type FlowTriggerType = "no_reply_days" | "stage_changed" | "lead_created";
+export type FlowStatus = "rascunho" | "ativo" | "pausado";
+export type FlowActionType = "send_whatsapp" | "send_email" | "create_task" | "change_stage" | "assign" | "notify";
+
+export interface AutomationFlow {
+  id: string;
+  name: string;
+  triggerType: FlowTriggerType;
+  triggerConfig: any;
+  status: FlowStatus;
+  createdAt: string;
+}
+
+export interface AutomationFlowStep {
+  id: string;
+  flowId: string;
+  orderIndex: number;
+  delayMinutes: number;
+  actionType: FlowActionType;
+  actionConfig: any;
+}
+
+export const FLOW_TRIGGER_LABELS: Record<FlowTriggerType, string> = {
+  no_reply_days: "Cliente sem responder (dias)",
+  stage_changed: "Mudança de etapa",
+  lead_created: "Novo lead criado",
+};
+
+export const FLOW_STATUS_LABELS: Record<FlowStatus, string> = {
+  rascunho: "Rascunho",
+  ativo: "Ativo",
+  pausado: "Pausado",
+};
+
+export const FLOW_ACTION_LABELS: Record<FlowActionType, string> = {
+  send_whatsapp: "Enviar WhatsApp",
+  send_email: "Enviar e-mail",
+  create_task: "Criar tarefa",
+  change_stage: "Alterar etapa",
+  assign: "Atribuir responsável",
+  notify: "Notificar vendedor",
+};

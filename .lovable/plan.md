@@ -1,83 +1,107 @@
 ## Objetivo
+Consolidar o módulo **Conversas** como inbox omnichannel central do CRM A7, inspirado no Respond.io. Sem reescrever — apenas evoluir.
 
-Adicionar a aba **Automações** (follow-ups + estrutura para disparos/workflows futuros) e evoluir o **Pipeline** com responsável, motivo de perda, tags, histórico e filtros — mantendo isolamento multiempresa, design atual e arquitetura existente.
+## 1. Banco de dados (uma migração)
 
----
+**Alterar `conversations`:**
+- adicionar `awaiting_reply boolean default false`
+- adicionar `is_unread boolean default false` (marcação manual, separada de `unread_count`)
 
-## 1. Banco de dados (migration única)
+**Alterar `leads.stage`** — manter chaves técnicas existentes, adicionar nova chave `hot_lead`:
+- `lead_entrou` → "🆕 Novo Lead"
+- `hot_lead` → "🔥 Hot Lead" (NOVO)
+- `em_atendimento` → "💬 Em Atendimento"
+- `qualificado` removido da UI (mantido no DB para retrocompatibilidade, oculto)
+- `agendado` → "📅 Agendado"
+- `compareceu` → "✅ Compareceu"
+- `fechou` → "💰 Fechou"
+- `perdido` → "❌ Perdido"
+- `sem_resposta` mantido oculto/legado
 
-Novas tabelas (todas com `company_id`, RLS por `get_user_company_id` + bypass para `owner`, padrão das demais):
+**Nova tabela `automation_flows`** (estrutura para fluxos futuros, sem execução):
+- `name`, `trigger_type` (no_reply_days, stage_changed, lead_created), `trigger_config jsonb`, `status` (rascunho|ativo|pausado), `created_by`
 
-- **follow_ups**
-  - `lead_id`, `assigned_to`, `scheduled_at` (date+time), `notes`, `status` (`pendente|concluido|atrasado`), `completed_at`, `created_by`
-- **campaigns** (estrutura para disparos futuros)
-  - `name`, `channel` (`whatsapp|email`), `status` (`agendado|pausado|ativo|concluido`), `scheduled_at`, `sent_count` (default 0), `replied_count` (default 0), `payload jsonb`
-- **lead_tags**
-  - `name`, `color`, único por (`company_id`, `name`)
-- **lead_tag_assignments**
-  - `lead_id`, `tag_id`, único por par
-- **lead_history** (timeline)
-  - `lead_id`, `event_type` (`created|stage_changed|assignee_changed|followup_created|followup_completed|lost_reason|appointment_created|message`), `actor_id`, `payload jsonb`
+**Nova tabela `automation_flow_steps`:**
+- `flow_id`, `order_index`, `delay_minutes`, `action_type` (send_whatsapp|send_email|create_task|change_stage|assign|notify), `action_config jsonb`
 
-Alterações em `leads`:
-- `loss_reason text` nullable
-- (já existe `assigned_to`)
+RLS por `company_id` em todas, igual padrão existente.
 
-Triggers:
-- `leads`: ao INSERT registra `created`; ao UPDATE de `stage` registra `stage_changed` (incluindo `loss_reason` no payload se `perdido`); ao UPDATE de `assigned_to` registra `assignee_changed`.
-- `appointments`: registra `appointment_created`.
-- `follow_ups`: registra `followup_created` / `followup_completed`; ao SELECT/aplicação marcamos `atrasado` no client (sem cron — apenas derivado).
+## 2. Tipos & contextos
 
----
+**`src/types/lead.ts`** — adicionar `hot_lead` ao enum `LeadStage`, atualizar `STAGE_LABELS` com emojis, definir `STAGE_ORDER` visível.
 
-## 2. Frontend — Automações
+**`src/context/ConversationsContext.tsx`** — adicionar:
+- `awaitingReply`, `isUnread` nos tipos
+- `setAwaitingReply(id, bool)`
+- `markUnread(id, bool)`
+- `assignConversation(id, userId)` (sincroniza `conversations.assigned_to` + `leads.assigned_to`)
+- `changeStage(conversationId, leadId, newStage)` (atualiza lead, dispara trigger de history)
 
-Novo arquivo `src/pages/Automations.tsx` + `src/context/FollowUpsContext.tsx` + `src/context/CampaignsContext.tsx` (esqueleto, listar/criar/pausar).
+**Novo `src/context/AutomationFlowsContext.tsx`** — CRUD básico (skeleton, sem execução).
 
-UI (mantendo estilo minimalista atual):
-- Sub-abas internas: **Follow-ups** | **Disparos** (com selo "em breve" para campos não-operacionais).
-- Follow-ups: três seções (Hoje, Próximos, Atrasados) com botão "Concluir" inline e modal "Novo follow-up" (lead, data, hora, obs, responsável).
-- Disparos: lista simples com status, contadores e ação pausar/ativar.
+## 3. UI Conversas (`src/pages/Conversations.tsx`)
 
-Adicionar item **Automações** no menu em `src/pages/Index.tsx` (ícone `Zap`).
+**Sidebar (lista):**
+- Filtros chips: Todas | Não lidas | Minhas | Sem responsável | Aguardando | Follow-up pendente
+- Filtro por etapa (select)
+- Filtro por origem (select)
+- Busca: nome OU telefone (normalizado)
+- Card melhorado:
+  - Avatar do lead (iniciais)
+  - Nome + horário última interação (relativo: "2m", "1h", "ontem")
+  - Última mensagem truncada
+  - Badge etapa com emoji
+  - Badge "🔴 Não lido" / "⏳ Aguardando" se aplicável
+  - Mini-avatar do **responsável** no canto inferior direito (estilo Respond.io)
 
-Pontos de integração:
-- `LeadDetailModal`: botão "Novo follow-up".
-- `Conversations` header: botão "Follow-up" ao lado dos atuais "Tarefa" e "Agendar".
+**Header da conversa aberta:**
+- Nome + telefone do lead
+- Select de **etapa** (com emojis) — altera direto
+- Select de **responsável** (membros da empresa)
+- Botões: "Aguardando resposta" (toggle), "Marcar não lido"
+- Botões existentes: Follow-up, Tarefa, Agendar
 
----
+**Painel direito (lateral, opcional, sem alterar layout principal):**
+- Próximo follow-up + follow-ups atrasados
+- Etapa atual + atalho
 
-## 3. Frontend — Pipeline
+## 4. Follow-ups na conversa
 
-`KanbanBoard.tsx` / `LeadCard.tsx` / `LeadDetailModal.tsx`:
+- Botão "Follow-up" no header → modal com data/horário/observação/responsável
+- Reusar `FollowUpsContext` existente
+- Mostrar próximo follow-up no topo da conversa quando existir
 
-1. **Responsável**: select de membros da empresa (carregar via `profiles` filtrados por `company_id`); mostrar avatar/iniciais no `LeadCard`; editar no modal.
-2. **Motivo de perda**: ao arrastar/mover para `perdido`, abrir `LossReasonModal` obrigatório (radios + "outro" com texto). Persistir em `leads.loss_reason` e disparar `lead_history`.
-3. **Tags**: gerenciador inline no `LeadDetailModal` (criar/selecionar tags da empresa). Pills no card.
-4. **Histórico**: nova seção no `LeadDetailModal` lendo `lead_history` em ordem cronológica.
-5. **Filtros**: barra de filtros acima do board — responsável, origem, tags (multi), etapa (já é colunar, usado para destacar), follow-up pendente, sem responsável.
-6. **Consistência**: reutilizar `LeadsContext` + novos hooks (`useFollowUps`, `useTags`, `useLeadHistory`), todos com `activeCompanyId`.
+## 5. Página Automações — aba "Fluxos"
 
----
+Adicionar terceira sub-aba **Fluxos** em `src/pages/Automations.tsx`:
+- Lista de fluxos criados
+- Modal "Novo fluxo": nome + gatilho + steps (ações com delay)
+- Sem execução real (placeholder: "Será disparado automaticamente em breve")
 
-## 4. Providers
+## 6. Consistência
 
-Em `src/App.tsx`, envolver com `FollowUpsProvider`, `CampaignsProvider`, `TagsProvider` dentro do bloco já existente do CRM.
+- `addLead` já deduplica por telefone — manter
+- `assignConversation` sincroniza lead.assigned_to
+- `changeStage` via conversa atualiza lead, triggers de history já registram
+- Tudo respeita `activeCompanyId` + role (seller vê só suas conversas)
 
----
+## Arquivos
 
-## 5. Detalhes técnicos
+**Novos:**
+- `supabase/migrations/<ts>_conversations_v2_and_flows.sql`
+- `src/context/AutomationFlowsContext.tsx`
+- `src/components/crm/ConversationListItem.tsx` (extrair card)
+- `src/components/crm/ConversationHeader.tsx`
 
-- Status "atrasado" calculado no client quando `status='pendente' AND scheduled_at < now()` para evitar cron.
-- Lista de membros da empresa: `select user_id, display_name from profiles where company_id = activeCompanyId`.
-- Todas operações usam `.eq('company_id', activeCompanyId)` em update/delete (padrão dos contexts atuais).
-- Sem nova lib; usar Dialog/Select/Badge existentes do shadcn.
-- Sem alteração de tema/cores; ícones via `lucide-react`.
-
----
+**Editados:**
+- `src/types/lead.ts`, `src/types/automations.ts`
+- `src/context/ConversationsContext.tsx`
+- `src/pages/Conversations.tsx`
+- `src/pages/Automations.tsx`
+- `src/App.tsx` (provider)
+- `src/integrations/supabase/types.ts` (regen automático)
 
 ## Fora de escopo
-
-- Envio real de WhatsApp/e-mail (apenas estrutura).
-- Cron jobs / edge functions de disparo.
-- Editor visual de workflows.
+- Envio real de WhatsApp/email
+- Execução do scheduler de fluxos
+- Anexos/áudio/imagens (estrutura preparada apenas conceitualmente)

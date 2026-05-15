@@ -13,6 +13,7 @@ import { AppointmentsProvider } from "@/context/AppointmentsContext";
 import { FollowUpsProvider } from "@/context/FollowUpsContext";
 import { CampaignsProvider } from "@/context/CampaignsContext";
 import { TagsProvider } from "@/context/TagsContext";
+import { AutomationFlowsProvider } from "@/context/AutomationFlowsContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import OwnerPanel from "./pages/OwnerPanel";
@@ -61,10 +62,12 @@ const AppRoutes = () => {
                 <FollowUpsProvider>
                   <CampaignsProvider>
                     <ConversationsProvider>
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                      </Routes>
+                      <AutomationFlowsProvider>
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="*" element={<Navigate to="/" replace />} />
+                        </Routes>
+                      </AutomationFlowsProvider>
                     </ConversationsProvider>
                   </CampaignsProvider>
                 </FollowUpsProvider>

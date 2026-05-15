@@ -12,6 +12,7 @@ interface KanbanColumnProps {
 
 const stageColors: Record<LeadStage, string> = {
   lead_entrou: "bg-crm-info",
+  hot_lead: "bg-crm-danger",
   em_atendimento: "bg-crm-warning",
   qualificado: "bg-crm-purple",
   agendado: "bg-primary",
@@ -21,7 +22,7 @@ const stageColors: Record<LeadStage, string> = {
   perdido: "bg-crm-danger",
 };
 
-const highlightedStages: LeadStage[] = ["qualificado", "agendado"];
+const highlightedStages: LeadStage[] = ["hot_lead", "agendado"];
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, leads, onOpenDetail, onDropLead }) => {
   const { moveLead } = useLeads();

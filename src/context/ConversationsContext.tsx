@@ -11,6 +11,8 @@ export interface Conversation {
   lastMessage: string;
   lastMessageAt: string;
   unreadCount: number;
+  awaitingReply: boolean;
+  isUnread: boolean;
   createdAt: string;
 }
 
@@ -28,6 +30,9 @@ interface ConversationsContextType {
   loadMessages: (conversationId: string) => Promise<Message[]>;
   sendMessage: (conversationId: string, body: string, direction?: "inbound" | "outbound") => Promise<Message | null>;
   markRead: (conversationId: string) => Promise<void>;
+  setAwaitingReply: (conversationId: string, value: boolean) => Promise<void>;
+  markUnread: (conversationId: string, value: boolean) => Promise<void>;
+  assignConversation: (conversationId: string, leadId: string, userId: string | null) => Promise<void>;
   reload: () => Promise<void>;
 }
 
@@ -48,6 +53,8 @@ const rowToConv = (r: any): Conversation => ({
   lastMessage: r.last_message,
   lastMessageAt: r.last_message_at,
   unreadCount: r.unread_count,
+  awaitingReply: r.awaiting_reply ?? false,
+  isUnread: r.is_unread ?? false,
   createdAt: r.created_at,
 });
 
@@ -102,9 +109,20 @@ export const ConversationsProvider: React.FC<{ children: React.ReactNode }> = ({
       .select()
       .single();
     if (data) {
+      // outbound message clears "awaiting reply"
+      if (direction === "outbound") {
+        await (supabase as any).from("conversations")
+          .update({ awaiting_reply: true })
+          .eq("id", conversationId).eq("company_id", activeCompanyId);
+      }
       setConversations(prev =>
         prev
-          .map(c => c.id === conversationId ? { ...c, lastMessage: body.trim(), lastMessageAt: data.sent_at } : c)
+          .map(c => c.id === conversationId ? {
+            ...c,
+            lastMessage: body.trim(),
+            lastMessageAt: data.sent_at,
+            awaitingReply: direction === "outbound" ? true : c.awaitingReply,
+          } : c)
           .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt))
       );
       return rowToMsg(data);
@@ -116,14 +134,41 @@ export const ConversationsProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!activeCompanyId) return;
     await (supabase as any)
       .from("conversations")
-      .update({ unread_count: 0 })
+      .update({ unread_count: 0, is_unread: false })
       .eq("id", conversationId)
       .eq("company_id", activeCompanyId);
-    setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, unreadCount: 0 } : c));
+    setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, unreadCount: 0, isUnread: false } : c));
+  }, [activeCompanyId]);
+
+  const setAwaitingReply = useCallback(async (conversationId: string, value: boolean) => {
+    if (!activeCompanyId) return;
+    await (supabase as any).from("conversations")
+      .update({ awaiting_reply: value })
+      .eq("id", conversationId).eq("company_id", activeCompanyId);
+    setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, awaitingReply: value } : c));
+  }, [activeCompanyId]);
+
+  const markUnread = useCallback(async (conversationId: string, value: boolean) => {
+    if (!activeCompanyId) return;
+    await (supabase as any).from("conversations")
+      .update({ is_unread: value })
+      .eq("id", conversationId).eq("company_id", activeCompanyId);
+    setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, isUnread: value } : c));
+  }, [activeCompanyId]);
+
+  const assignConversation = useCallback(async (conversationId: string, leadId: string, userId: string | null) => {
+    if (!activeCompanyId) return;
+    await (supabase as any).from("conversations")
+      .update({ assigned_to: userId })
+      .eq("id", conversationId).eq("company_id", activeCompanyId);
+    await (supabase as any).from("leads")
+      .update({ assigned_to: userId })
+      .eq("id", leadId).eq("company_id", activeCompanyId);
+    setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, assignedTo: userId } : c));
   }, [activeCompanyId]);
 
   return (
-    <ConversationsContext.Provider value={{ conversations, loading, loadMessages, sendMessage, markRead, reload }}>
+    <ConversationsContext.Provider value={{ conversations, loading, loadMessages, sendMessage, markRead, setAwaitingReply, markUnread, assignConversation, reload }}>
       {children}
     </ConversationsContext.Provider>
   );

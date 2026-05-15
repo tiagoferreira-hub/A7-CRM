@@ -1,5 +1,6 @@
 export type LeadStage =
   | "lead_entrou"
+  | "hot_lead"
   | "em_atendimento"
   | "qualificado"
   | "agendado"
@@ -39,18 +40,32 @@ export interface Lead {
 }
 
 export const STAGE_LABELS: Record<LeadStage, string> = {
-  lead_entrou: "Lead entrou",
-  em_atendimento: "Em atendimento",
+  lead_entrou: "🆕 Novo Lead",
+  hot_lead: "🔥 Hot Lead",
+  em_atendimento: "💬 Em Atendimento",
   qualificado: "Qualificado",
-  agendado: "Agendado",
-  compareceu: "Compareceu",
-  fechou: "Fechou",
+  agendado: "📅 Agendado",
+  compareceu: "✅ Compareceu",
+  fechou: "💰 Fechou",
   sem_resposta: "Sem resposta",
-  perdido: "Perdido",
+  perdido: "❌ Perdido",
 };
 
+// Visible/active stages (modern commercial pipeline)
 export const STAGE_ORDER: LeadStage[] = [
   "lead_entrou",
+  "hot_lead",
+  "em_atendimento",
+  "agendado",
+  "compareceu",
+  "fechou",
+  "perdido",
+];
+
+// All stages (for legacy data display)
+export const STAGE_ALL: LeadStage[] = [
+  "lead_entrou",
+  "hot_lead",
   "em_atendimento",
   "qualificado",
   "agendado",
