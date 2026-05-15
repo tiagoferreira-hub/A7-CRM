@@ -71,17 +71,24 @@ const Conversations: React.FC = () => {
     return conversations.filter(c => {
       const lead = leadById[c.leadId];
       if (!lead) return false;
-      if (filterUnread && c.unreadCount === 0) return false;
+      if (filterUnread && c.unreadCount === 0 && !c.isUnread) return false;
+      if (filterAwaiting && !c.awaitingReply) return false;
+      if (filterNoOwner && c.assignedTo) return false;
+      if (filterPendingFup && !leadsWithPendingFup.has(lead.id)) return false;
       if (filterStage !== "all" && lead.stage !== filterStage) return false;
       if (filterOrigin !== "all" && lead.origin !== filterOrigin) return false;
       if (filterMine && c.assignedTo !== user?.id) return false;
       if (search) {
         const s = search.toLowerCase();
-        if (!lead.name.toLowerCase().includes(s) && !lead.phone.toLowerCase().includes(s)) return false;
+        const phone = lead.phone.replace(/\D/g, "");
+        const sDigits = s.replace(/\D/g, "");
+        const matchesName = lead.name.toLowerCase().includes(s);
+        const matchesPhone = sDigits ? phone.includes(sDigits) : false;
+        if (!matchesName && !matchesPhone) return false;
       }
       return true;
     });
-  }, [conversations, leadById, search, filterUnread, filterStage, filterOrigin, filterMine, user]);
+  }, [conversations, leadById, search, filterUnread, filterStage, filterOrigin, filterMine, filterAwaiting, filterNoOwner, filterPendingFup, leadsWithPendingFup, user]);
 
   const selected = selectedId ? conversations.find(c => c.id === selectedId) : null;
   const selectedLead = selected ? leadById[selected.leadId] : null;
