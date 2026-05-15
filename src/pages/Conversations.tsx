@@ -151,26 +151,29 @@ const Conversations: React.FC = () => {
             />
           </div>
           <div className="flex flex-wrap gap-1.5">
-            <button
-              onClick={() => setFilterUnread(v => !v)}
-              className={`text-xs px-2 py-1 rounded-md border ${filterUnread ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
-            >Não lidos</button>
-            <button
-              onClick={() => setFilterMine(v => !v)}
-              className={`text-xs px-2 py-1 rounded-md border ${filterMine ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
-            >Meus</button>
+            {[
+              { k: "unread", label: "Não lidas", v: filterUnread, set: setFilterUnread },
+              { k: "mine", label: "Minhas", v: filterMine, set: setFilterMine },
+              { k: "noowner", label: "Sem responsável", v: filterNoOwner, set: setFilterNoOwner },
+              { k: "await", label: "Aguardando", v: filterAwaiting, set: setFilterAwaiting },
+              { k: "fup", label: "Follow-up pendente", v: filterPendingFup, set: setFilterPendingFup },
+            ].map(f => (
+              <button key={f.k} onClick={() => f.set(v => !v)}
+                className={`text-[11px] px-2 py-1 rounded-md border ${f.v ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+              >{f.label}</button>
+            ))}
             <select
               value={filterStage}
               onChange={e => setFilterStage(e.target.value)}
-              className="text-xs px-1.5 py-1 rounded-md border border-border bg-card text-foreground"
+              className="text-[11px] px-1.5 py-1 rounded-md border border-border bg-card text-foreground"
             >
               <option value="all">Etapa</option>
-              {Object.entries(STAGE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              {STAGE_ORDER.map(k => <option key={k} value={k}>{STAGE_LABELS[k]}</option>)}
             </select>
             <select
               value={filterOrigin}
               onChange={e => setFilterOrigin(e.target.value)}
-              className="text-xs px-1.5 py-1 rounded-md border border-border bg-card text-foreground"
+              className="text-[11px] px-1.5 py-1 rounded-md border border-border bg-card text-foreground"
             >
               <option value="all">Origem</option>
               {Object.entries(ORIGIN_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
