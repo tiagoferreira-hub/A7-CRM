@@ -32,6 +32,32 @@ const Automations: React.FC = () => {
   const [campChannel, setCampChannel] = useState<CampaignChannel>("whatsapp");
   const [campDate, setCampDate] = useState("");
 
+  // Flow builder
+  const [flowOpen, setFlowOpen] = useState(false);
+  const [flowName, setFlowName] = useState("");
+  const [flowTrigger, setFlowTrigger] = useState<FlowTriggerType>("no_reply_days");
+  const [flowDays, setFlowDays] = useState(1);
+  const [flowSteps2, setFlowSteps2] = useState<{ delayMinutes: number; actionType: FlowActionType; message: string }[]>([
+    { delayMinutes: 0, actionType: "send_whatsapp", message: "" },
+  ]);
+
+  const handleCreateFlow = async () => {
+    if (!flowName.trim()) return;
+    await addFlow({
+      name: flowName.trim(),
+      triggerType: flowTrigger,
+      triggerConfig: flowTrigger === "no_reply_days" ? { days: flowDays } : {},
+      steps: flowSteps2.map((s, i) => ({
+        orderIndex: i,
+        delayMinutes: s.delayMinutes,
+        actionType: s.actionType,
+        actionConfig: { message: s.message },
+      })),
+    });
+    setFlowOpen(false); setFlowName(""); setFlowTrigger("no_reply_days"); setFlowDays(1);
+    setFlowSteps2([{ delayMinutes: 0, actionType: "send_whatsapp", message: "" }]);
+  };
+
   const leadById = useMemo(() => Object.fromEntries(leads.map(l => [l.id, l])), [leads]);
   const memberById = useMemo(() => Object.fromEntries(members.map(m => [m.userId, m.displayName])), [members]);
 
