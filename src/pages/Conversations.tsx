@@ -5,28 +5,36 @@ import { useAuth } from "@/context/AuthContext";
 import { useTasks } from "@/context/TasksContext";
 import { useAppointments } from "@/context/AppointmentsContext";
 import { useFollowUps } from "@/context/FollowUpsContext";
-import { ORIGIN_LABELS, STAGE_LABELS } from "@/types/lead";
+import { useCompanyMembers } from "@/hooks/useCompanyMembers";
+import { ORIGIN_LABELS, STAGE_LABELS, STAGE_ORDER, LeadStage } from "@/types/lead";
 import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_TYPE_OPTIONS, AppointmentType } from "@/types/appointment";
-import { Search, Send, Phone, CheckSquare, CalendarPlus, Clock } from "lucide-react";
+import { Search, Send, Phone, CheckSquare, CalendarPlus, Clock, MailOpen, Hourglass, UserCircle2 } from "lucide-react";
 import LeadDetailModal from "@/components/crm/LeadDetailModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const formatTime = (iso: string) => {
   const d = new Date(iso);
   const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "agora";
+  if (diffMin < 60) return `${diffMin}m`;
   const sameDay = d.toDateString() === now.toDateString();
-  return sameDay
-    ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-    : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  if (sameDay) return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const yest = new Date(now); yest.setDate(now.getDate() - 1);
+  if (d.toDateString() === yest.toDateString()) return "ontem";
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 };
 
 const Conversations: React.FC = () => {
-  const { conversations, loadMessages, sendMessage, markRead } = useConversations();
-  const { leads } = useLeads();
+  const { conversations, loadMessages, sendMessage, markRead, setAwaitingReply, markUnread, assignConversation } = useConversations();
+  const { leads, updateLead } = useLeads();
   const { user } = useAuth();
   const { addTask } = useTasks();
   const { addAppointment, appointments } = useAppointments();
-  const { addFollowUp } = useFollowUps();
+  const { addFollowUp, followUps } = useFollowUps();
+  const members = useCompanyMembers();
+  const memberById = useMemo(() => Object.fromEntries(members.map(m => [m.userId, m])), [members]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -35,6 +43,9 @@ const Conversations: React.FC = () => {
   const [filterStage, setFilterStage] = useState<string>("all");
   const [filterOrigin, setFilterOrigin] = useState<string>("all");
   const [filterMine, setFilterMine] = useState(false);
+  const [filterAwaiting, setFilterAwaiting] = useState(false);
+  const [filterNoOwner, setFilterNoOwner] = useState(false);
+  const [filterPendingFup, setFilterPendingFup] = useState(false);
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
@@ -48,6 +59,11 @@ const Conversations: React.FC = () => {
   const [fupDate, setFupDate] = useState("");
   const [fupTime, setFupTime] = useState("09:00");
   const [fupNotes, setFupNotes] = useState("");
+
+  const leadsWithPendingFup = useMemo(
+    () => new Set(followUps.filter(f => f.status !== "concluido").map(f => f.leadId)),
+    [followUps]
+  );
 
   const leadById = useMemo(() => Object.fromEntries(leads.map(l => [l.id, l])), [leads]);
 
