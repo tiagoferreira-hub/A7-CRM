@@ -253,7 +253,7 @@ const Conversations: React.FC = () => {
           </div>
         ) : (
           <>
-            <header className="flex items-center justify-between px-5 py-3 border-b border-border bg-card">
+            <header className="flex items-center justify-between px-5 py-3 border-b border-border bg-card gap-3 flex-wrap">
               <button
                 onClick={() => setOpenLeadId(selectedLead.id)}
                 className="flex items-center gap-3 text-left hover:opacity-80"
@@ -266,7 +266,36 @@ const Conversations: React.FC = () => {
                   <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" />{selectedLead.phone}</p>
                 </div>
               </button>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Stage select — syncs with pipeline */}
+                <select
+                  value={selectedLead.stage}
+                  onChange={e => updateLead(selectedLead.id, { stage: e.target.value as LeadStage })}
+                  className="text-[11px] px-2 py-1.5 rounded-md border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  title="Etapa do lead"
+                >
+                  {STAGE_ORDER.map(s => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
+                </select>
+                {/* Owner select — syncs lead + conversation */}
+                <select
+                  value={selected.assignedTo ?? ""}
+                  onChange={e => assignConversation(selected.id, selectedLead.id, e.target.value || null)}
+                  className="text-[11px] px-2 py-1.5 rounded-md border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  title="Responsável"
+                >
+                  <option value="">Sem responsável</option>
+                  {members.map(m => <option key={m.userId} value={m.userId}>{m.displayName}</option>)}
+                </select>
+                <button
+                  onClick={() => setAwaitingReply(selected.id, !selected.awaitingReply)}
+                  className={`flex items-center gap-1 text-xs font-medium px-2 py-1.5 rounded-md border ${selected.awaitingReply ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40" : "border-border text-muted-foreground hover:bg-accent"}`}
+                  title="Aguardando resposta"
+                ><Hourglass className="w-3.5 h-3.5" /> Aguardando</button>
+                <button
+                  onClick={() => markUnread(selected.id, !selected.isUnread)}
+                  className={`flex items-center gap-1 text-xs font-medium px-2 py-1.5 rounded-md border ${selected.isUnread ? "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/40" : "border-border text-muted-foreground hover:bg-accent"}`}
+                  title="Marcar não lido"
+                ><MailOpen className="w-3.5 h-3.5" /> Não lido</button>
                 <button
                   onClick={() => setFupOpen(true)}
                   className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md border border-border text-foreground hover:bg-accent"
@@ -279,8 +308,6 @@ const Conversations: React.FC = () => {
                   onClick={() => setApptOpen(true)}
                   className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90"
                 ><CalendarPlus className="w-3.5 h-3.5" /> Agendar</button>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground">{STAGE_LABELS[selectedLead.stage]}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground">{ORIGIN_LABELS[selectedLead.origin]}</span>
               </div>
             </header>
 
