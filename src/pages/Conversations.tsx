@@ -189,30 +189,48 @@ const Conversations: React.FC = () => {
             const lead = leadById[c.leadId];
             if (!lead) return null;
             const isActive = c.id === selectedId;
+            const isUnreadVisual = c.unreadCount > 0 || c.isUnread;
+            const owner = c.assignedTo ? memberById[c.assignedTo] : null;
             return (
               <button
                 key={c.id}
                 onClick={() => setSelectedId(c.id)}
                 className={`w-full text-left px-3 py-3 border-b border-border flex gap-3 items-start hover:bg-accent transition-colors ${isActive ? "bg-accent" : ""}`}
               >
-                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
-                  {lead.name.charAt(0).toUpperCase()}
+                <div className="relative shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">
+                    {lead.name.charAt(0).toUpperCase()}
+                  </div>
+                  {/* Mini-avatar of the responsible (Respond.io style) */}
+                  {owner && (
+                    <span
+                      title={owner.displayName}
+                      className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-card"
+                    >
+                      {owner.displayName.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-foreground truncate">{lead.name}</p>
+                    <p className={`text-sm truncate ${isUnreadVisual ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>{lead.name}</p>
                     <span className="text-[10px] text-muted-foreground shrink-0">{formatTime(c.lastMessageAt)}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">{lead.phone}</p>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">{c.lastMessage || "—"}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{lead.phone}</p>
+                  <p className={`text-xs truncate mt-0.5 ${isUnreadVisual ? "text-foreground font-medium" : "text-muted-foreground"}`}>{c.lastMessage || "—"}</p>
                   <div className="flex items-center gap-1 mt-1 flex-wrap">
-                    {c.unreadCount > 0 && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-foreground font-medium">{STAGE_LABELS[lead.stage]}</span>
+                    {isUnreadVisual && (
                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 font-medium">Não lido</span>
                     )}
-                    {c.assignedTo && c.unreadCount === 0 && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-medium">Em atendimento</span>
+                    {c.awaitingReply && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-medium flex items-center gap-0.5">
+                        <Hourglass className="w-2.5 h-2.5" /> Aguardando
+                      </span>
                     )}
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{STAGE_LABELS[lead.stage]}</span>
+                    {leadsWithPendingFup.has(lead.id) && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-medium">Follow-up</span>
+                    )}
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{ORIGIN_LABELS[lead.origin]}</span>
                   </div>
                 </div>
