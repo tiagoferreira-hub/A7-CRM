@@ -218,7 +218,145 @@ const Automations: React.FC = () => {
             ))}
           </div>
         )}
+
+        {tab === "flows" && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Workflow className="w-3.5 h-3.5" />
+              Estrutura preparada para fluxos automáticos (gatilhos, delays e ações). Execução real será habilitada em breve.
+            </p>
+            {flows.length === 0 && (
+              <p className="text-sm text-muted-foreground italic">Nenhum fluxo cadastrado ainda.</p>
+            )}
+            {flows.map(f => {
+              const fSteps = flowSteps.filter(s => s.flowId === f.id);
+              return (
+                <div key={f.id} className="border border-border rounded-lg p-4 bg-card">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Workflow className="w-4 h-4 text-primary" />
+                        <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground">{FLOW_TRIGGER_LABELS[f.triggerType]}{f.triggerType === "no_reply_days" && f.triggerConfig?.days ? ` · ${f.triggerConfig.days}d` : ""}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded ${f.status === "ativo" ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>{FLOW_STATUS_LABELS[f.status]}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {f.status === "ativo" ? (
+                        <button onClick={() => setFlowStatus(f.id, "pausado")} className="text-xs flex items-center gap-1 px-2 py-1 rounded-md border border-border hover:bg-accent">
+                          <Pause className="w-3.5 h-3.5" /> Pausar
+                        </button>
+                      ) : (
+                        <button onClick={() => setFlowStatus(f.id, "ativo")} className="text-xs flex items-center gap-1 px-2 py-1 rounded-md border border-border hover:bg-accent">
+                          <Play className="w-3.5 h-3.5" /> Ativar
+                        </button>
+                      )}
+                      <button onClick={() => deleteFlow(f.id)} className="p-1.5 rounded-md hover:bg-accent text-muted-foreground">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  {fSteps.length > 0 && (
+                    <ol className="mt-3 space-y-1.5 pl-1">
+                      {fSteps.map((s, i) => (
+                        <li key={s.id} className="text-xs text-muted-foreground flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-muted text-foreground text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                          <span>após <span className="font-medium text-foreground">{s.delayMinutes}min</span></span>
+                          <span>→</span>
+                          <span className="font-medium text-foreground">{FLOW_ACTION_LABELS[s.actionType]}</span>
+                          {s.actionConfig?.message && <span className="truncate italic">"{s.actionConfig.message}"</span>}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      {/* New flow dialog */}
+      <Dialog open={flowOpen} onOpenChange={setFlowOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Novo fluxo de automação</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2 max-h-[70vh] overflow-y-auto pr-1">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Nome</label>
+              <input value={flowName} onChange={e => setFlowName(e.target.value)}
+                placeholder="Ex.: Recuperar lead sem resposta"
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Gatilho</label>
+                <select value={flowTrigger} onChange={e => setFlowTrigger(e.target.value as FlowTriggerType)}
+                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring">
+                  {Object.entries(FLOW_TRIGGER_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
+              {flowTrigger === "no_reply_days" && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Dias sem responder</label>
+                  <input type="number" min={1} value={flowDays} onChange={e => setFlowDays(parseInt(e.target.value) || 1)}
+                    className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-muted-foreground">Ações em sequência</label>
+                <button onClick={() => setFlowSteps2(prev => [...prev, { delayMinutes: 60, actionType: "send_whatsapp", message: "" }])}
+                  className="text-[11px] flex items-center gap-1 px-2 py-1 rounded border border-border hover:bg-accent text-foreground">
+                  <Plus className="w-3 h-3" /> Adicionar ação
+                </button>
+              </div>
+              <div className="space-y-2">
+                {flowSteps2.map((s, i) => (
+                  <div key={i} className="border border-border rounded-md p-2.5 bg-muted/30 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-foreground">Ação {i + 1}</span>
+                      {flowSteps2.length > 1 && (
+                        <button onClick={() => setFlowSteps2(prev => prev.filter((_, j) => j !== i))}
+                          className="p-1 rounded hover:bg-accent text-muted-foreground">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Delay (min)</label>
+                        <input type="number" min={0} value={s.delayMinutes}
+                          onChange={e => setFlowSteps2(prev => prev.map((x, j) => j === i ? { ...x, delayMinutes: parseInt(e.target.value) || 0 } : x))}
+                          className="w-full text-xs border border-input rounded-md px-2 py-1 bg-background" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Ação</label>
+                        <select value={s.actionType}
+                          onChange={e => setFlowSteps2(prev => prev.map((x, j) => j === i ? { ...x, actionType: e.target.value as FlowActionType } : x))}
+                          className="w-full text-xs border border-input rounded-md px-2 py-1 bg-background">
+                          {Object.entries(FLOW_ACTION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    {(s.actionType === "send_whatsapp" || s.actionType === "send_email" || s.actionType === "create_task") && (
+                      <input value={s.message}
+                        onChange={e => setFlowSteps2(prev => prev.map((x, j) => j === i ? { ...x, message: e.target.value } : x))}
+                        placeholder={s.actionType === "create_task" ? "Título da tarefa" : "Mensagem"}
+                        className="w-full text-xs border border-input rounded-md px-2 py-1 bg-background" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button onClick={() => setFlowOpen(false)} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>
+              <button onClick={handleCreateFlow} disabled={!flowName.trim()}
+                className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40">Criar fluxo</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* New follow-up dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
