@@ -145,17 +145,27 @@ const Automations: React.FC = () => {
             <button onClick={() => setTab("campaigns")}
               className={`text-sm font-medium px-3 py-1.5 rounded-md transition-colors ${tab === "campaigns" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >Disparos <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">em breve</span></button>
+            <button onClick={() => setTab("flows")}
+              className={`text-sm font-medium px-3 py-1.5 rounded-md transition-colors ${tab === "flows" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >Fluxos <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">beta</span></button>
           </nav>
         </div>
-        {tab === "followups" ? (
+        {tab === "followups" && (
           <button onClick={() => setOpen(true)}
             className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90">
             <Plus className="w-4 h-4" /> Novo follow-up
           </button>
-        ) : (
+        )}
+        {tab === "campaigns" && (
           <button onClick={() => setCampOpen(true)}
             className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90">
             <Plus className="w-4 h-4" /> Novo disparo
+          </button>
+        )}
+        {tab === "flows" && (
+          <button onClick={() => setFlowOpen(true)}
+            className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90">
+            <Plus className="w-4 h-4" /> Novo fluxo
           </button>
         )}
       </div>
