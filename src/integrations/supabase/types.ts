@@ -53,6 +53,83 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_flow_steps: {
+        Row: {
+          action_config: Json
+          action_type: string
+          company_id: string
+          created_at: string
+          delay_minutes: number
+          flow_id: string
+          id: string
+          order_index: number
+        }
+        Insert: {
+          action_config?: Json
+          action_type?: string
+          company_id: string
+          created_at?: string
+          delay_minutes?: number
+          flow_id: string
+          id?: string
+          order_index?: number
+        }
+        Update: {
+          action_config?: Json
+          action_type?: string
+          company_id?: string
+          created_at?: string
+          delay_minutes?: number
+          flow_id?: string
+          id?: string
+          order_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_flow_steps_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "automation_flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_flows: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          status: string
+          trigger_config: Json
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          status?: string
+          trigger_config?: Json
+          trigger_type?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          status?: string
+          trigger_config?: Json
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       campaigns: {
         Row: {
           channel: string
@@ -125,11 +202,13 @@ export type Database = {
       conversations: {
         Row: {
           assigned_to: string | null
+          awaiting_reply: boolean
           channel: string
           company_id: string
           created_at: string
           external_id: string | null
           id: string
+          is_unread: boolean
           last_message: string
           last_message_at: string
           lead_id: string
@@ -138,11 +217,13 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          awaiting_reply?: boolean
           channel?: string
           company_id: string
           created_at?: string
           external_id?: string | null
           id?: string
+          is_unread?: boolean
           last_message?: string
           last_message_at?: string
           lead_id: string
@@ -151,11 +232,13 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          awaiting_reply?: boolean
           channel?: string
           company_id?: string
           created_at?: string
           external_id?: string | null
           id?: string
+          is_unread?: boolean
           last_message?: string
           last_message_at?: string
           lead_id?: string
