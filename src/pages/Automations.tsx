@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { useFollowUps } from "@/context/FollowUpsContext";
 import { useCampaigns } from "@/context/CampaignsContext";
+import { useAutomationFlows } from "@/context/AutomationFlowsContext";
 import { useLeads } from "@/context/LeadsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CAMPAIGN_CHANNEL_LABELS, CAMPAIGN_STATUS_LABELS, CampaignChannel } from "@/types/automations";
-import { Zap, Plus, Check, Trash2, Pause, Play, Mail, MessageCircle } from "lucide-react";
+import { CAMPAIGN_CHANNEL_LABELS, CAMPAIGN_STATUS_LABELS, CampaignChannel, FLOW_ACTION_LABELS, FLOW_STATUS_LABELS, FLOW_TRIGGER_LABELS, FlowActionType, FlowTriggerType } from "@/types/automations";
+import { Zap, Plus, Check, Trash2, Pause, Play, Mail, MessageCircle, Workflow } from "lucide-react";
 
 const fmtDateTime = (iso: string) => new Date(iso).toLocaleString("pt-BR", {
   day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
@@ -14,10 +15,11 @@ const fmtDateTime = (iso: string) => new Date(iso).toLocaleString("pt-BR", {
 const Automations: React.FC = () => {
   const { followUps, addFollowUp, completeFollowUp, deleteFollowUp } = useFollowUps();
   const { campaigns, addCampaign, setCampaignStatus, deleteCampaign } = useCampaigns();
+  const { flows, steps: flowSteps, addFlow, setFlowStatus, deleteFlow } = useAutomationFlows();
   const { leads } = useLeads();
   const members = useCompanyMembers();
 
-  const [tab, setTab] = useState<"followups" | "campaigns">("followups");
+  const [tab, setTab] = useState<"followups" | "campaigns" | "flows">("followups");
   const [open, setOpen] = useState(false);
   const [leadId, setLeadId] = useState("");
   const [date, setDate] = useState("");
