@@ -8,9 +8,15 @@ import { useFollowUps } from "@/context/FollowUpsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { ORIGIN_LABELS, STAGE_LABELS, STAGE_ORDER, LeadStage } from "@/types/lead";
 import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_TYPE_OPTIONS, AppointmentType } from "@/types/appointment";
-import { Search, Send, Phone, CheckSquare, CalendarPlus, Clock, MailOpen, Hourglass, UserCircle2 } from "lucide-react";
+import {
+  Search, Send, Phone, CheckSquare, CalendarPlus, Clock, Sparkles,
+  Inbox, User, UserX, PhoneIncoming, Bot, Activity, Users, Star,
+  ChevronDown, ChevronRight, MessageCircle, Instagram,
+} from "lucide-react";
 import LeadDetailModal from "@/components/crm/LeadDetailModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+type InboxKey = "all" | "mine" | "noowner" | "calls" | "unread" | "awaiting" | "pending_fup";
 
 const formatTime = (iso: string) => {
   const d = new Date(iso);
@@ -26,27 +32,47 @@ const formatTime = (iso: string) => {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 };
 
+const AI_SUGGESTIONS = [
+  "Claro! Qual procedimento você deseja fazer?",
+  "Posso te ajudar. É sua primeira vez na clínica?",
+  "Tem preferência de horário para agendar?",
+  "Posso te enviar nossos valores e disponibilidades agora?",
+  "Você prefere atendimento pela manhã ou à tarde?",
+];
+
+const channelIcon = (channel?: string) => {
+  if (channel === "instagram") return <Instagram className="w-3 h-3" />;
+  return <MessageCircle className="w-3 h-3" />;
+};
+
 const Conversations: React.FC = () => {
-  const { conversations, loadMessages, sendMessage, markRead, setAwaitingReply, markUnread, assignConversation } = useConversations();
+  const { conversations, loadMessages, sendMessage, markRead, assignConversation } = useConversations();
   const { leads, updateLead } = useLeads();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { addTask } = useTasks();
   const { addAppointment, appointments } = useAppointments();
   const { addFollowUp, followUps } = useFollowUps();
   const members = useCompanyMembers();
   const memberById = useMemo(() => Object.fromEntries(members.map(m => [m.userId, m])), [members]);
+
+  const canEditOwner = role === "owner" || role === "admin" || role === "client";
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
-  const [filterUnread, setFilterUnread] = useState(false);
-  const [filterStage, setFilterStage] = useState<string>("all");
-  const [filterOrigin, setFilterOrigin] = useState<string>("all");
-  const [filterMine, setFilterMine] = useState(false);
-  const [filterAwaiting, setFilterAwaiting] = useState(false);
-  const [filterNoOwner, setFilterNoOwner] = useState(false);
-  const [filterPendingFup, setFilterPendingFup] = useState(false);
+  const [activeInbox, setActiveInbox] = useState<InboxKey>("all");
+  const [activeStage, setActiveStage] = useState<LeadStage | null>(null);
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
+
+  const [expandedInbox, setExpandedInbox] = useState(true);
+  const [expandedAI, setExpandedAI] = useState(true);
+  const [expandedLifecycle, setExpandedLifecycle] = useState(true);
+  const [expandedTeam, setExpandedTeam] = useState(false);
+  const [expandedCustom, setExpandedCustom] = useState(false);
+
+  const [aiOpen, setAiOpen] = useState(false);
+
   const [taskOpen, setTaskOpen] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDate, setTaskDate] = useState("");
@@ -67,17 +93,44 @@ const Conversations: React.FC = () => {
 
   const leadById = useMemo(() => Object.fromEntries(leads.map(l => [l.id, l])), [leads]);
 
+  // Counters
+  const counters = useMemo(() => {
+    const c = {
+      all: conversations.length,
+      mine: 0,
+      noowner: 0,
+      unread: 0,
+      awaiting: 0,
+      pending_fup: 0,
+      stages: {} as Record<string, number>,
+    };
+    conversations.forEach(conv => {
+      const lead = leadById[conv.leadId];
+      if (!lead) return;
+      if (conv.assignedTo === user?.id) c.mine += 1;
+      if (!conv.assignedTo) c.noowner += 1;
+      if (conv.unreadCount > 0 || conv.isUnread) c.unread += 1;
+      if (conv.awaitingReply) c.awaiting += 1;
+      if (leadsWithPendingFup.has(lead.id)) c.pending_fup += 1;
+      c.stages[lead.stage] = (c.stages[lead.stage] ?? 0) + 1;
+    });
+    return c;
+  }, [conversations, leadById, user, leadsWithPendingFup]);
+
   const filtered = useMemo(() => {
     return conversations.filter(c => {
       const lead = leadById[c.leadId];
       if (!lead) return false;
-      if (filterUnread && c.unreadCount === 0 && !c.isUnread) return false;
-      if (filterAwaiting && !c.awaitingReply) return false;
-      if (filterNoOwner && c.assignedTo) return false;
-      if (filterPendingFup && !leadsWithPendingFup.has(lead.id)) return false;
-      if (filterStage !== "all" && lead.stage !== filterStage) return false;
-      if (filterOrigin !== "all" && lead.origin !== filterOrigin) return false;
-      if (filterMine && c.assignedTo !== user?.id) return false;
+      // inbox filter
+      if (activeInbox === "mine" && c.assignedTo !== user?.id) return false;
+      if (activeInbox === "noowner" && c.assignedTo) return false;
+      if (activeInbox === "unread" && c.unreadCount === 0 && !c.isUnread) return false;
+      if (activeInbox === "awaiting" && !c.awaitingReply) return false;
+      if (activeInbox === "pending_fup" && !leadsWithPendingFup.has(lead.id)) return false;
+      if (activeInbox === "calls") return false; // not implemented yet
+      // stage filter
+      if (activeStage && lead.stage !== activeStage) return false;
+      // search
       if (search) {
         const s = search.toLowerCase();
         const phone = lead.phone.replace(/\D/g, "");
@@ -88,7 +141,7 @@ const Conversations: React.FC = () => {
       }
       return true;
     });
-  }, [conversations, leadById, search, filterUnread, filterStage, filterOrigin, filterMine, filterAwaiting, filterNoOwner, filterPendingFup, leadsWithPendingFup, user]);
+  }, [conversations, leadById, search, activeInbox, activeStage, leadsWithPendingFup, user]);
 
   const selected = selectedId ? conversations.find(c => c.id === selectedId) : null;
   const selectedLead = selected ? leadById[selected.leadId] : null;
@@ -136,11 +189,142 @@ const Conversations: React.FC = () => {
     setApptDate(""); setApptTime("09:00"); setApptType("avaliacao"); setApptNotes(""); setApptOpen(false);
   };
 
+  const SectionHeader: React.FC<{
+    label: string;
+    open: boolean;
+    onToggle: () => void;
+    icon?: React.ReactNode;
+  }> = ({ label, open, onToggle, icon }) => (
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+    >
+      {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+
+  const NavItem: React.FC<{
+    label: string;
+    icon: React.ReactNode;
+    count?: number;
+    active?: boolean;
+    onClick?: () => void;
+    disabled?: boolean;
+  }> = ({ label, icon, count, active, onClick, disabled }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 text-[13px] rounded-md mx-1.5 transition-colors ${
+        active
+          ? "bg-primary/10 text-primary font-medium"
+          : disabled
+          ? "text-muted-foreground/50 cursor-not-allowed"
+          : "text-foreground/80 hover:bg-accent hover:text-foreground"
+      }`}
+    >
+      <span className="flex items-center gap-2 min-w-0">
+        <span className={active ? "text-primary" : "text-muted-foreground"}>{icon}</span>
+        <span className="truncate">{label}</span>
+      </span>
+      {typeof count === "number" && count > 0 && (
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+          {count}
+        </span>
+      )}
+    </button>
+  );
+
+  const handleSuggestionClick = (text: string) => {
+    setInput(text);
+    setAiOpen(false);
+  };
+
   return (
     <div className="flex h-full bg-background">
-      {/* Sidebar */}
-      <aside className="w-80 border-r border-border bg-card flex flex-col">
-        <div className="p-3 border-b border-border space-y-2">
+      {/* Secondary sidebar (Respond.io-style) */}
+      <aside className="w-56 border-r border-border bg-card/40 flex flex-col shrink-0">
+        <div className="px-4 py-3 border-b border-border">
+          <h2 className="text-sm font-semibold text-foreground">Conversas</h2>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Central de atendimento</p>
+        </div>
+        <div className="flex-1 overflow-y-auto py-2 space-y-1">
+          {/* Inbox */}
+          <div>
+            <SectionHeader label="Inbox" open={expandedInbox} onToggle={() => setExpandedInbox(v => !v)} icon={<Inbox className="w-3 h-3" />} />
+            {expandedInbox && (
+              <div className="space-y-0.5">
+                <NavItem label="Todas" icon={<Inbox className="w-3.5 h-3.5" />} count={counters.all} active={activeInbox === "all" && !activeStage} onClick={() => { setActiveInbox("all"); setActiveStage(null); }} />
+                <NavItem label="Minhas" icon={<User className="w-3.5 h-3.5" />} count={counters.mine} active={activeInbox === "mine"} onClick={() => { setActiveInbox("mine"); setActiveStage(null); }} />
+                <NavItem label="Sem responsável" icon={<UserX className="w-3.5 h-3.5" />} count={counters.noowner} active={activeInbox === "noowner"} onClick={() => { setActiveInbox("noowner"); setActiveStage(null); }} />
+                <NavItem label="Ligações recebidas" icon={<PhoneIncoming className="w-3.5 h-3.5" />} count={0} active={activeInbox === "calls"} onClick={() => { setActiveInbox("calls"); setActiveStage(null); }} disabled />
+              </div>
+            )}
+          </div>
+
+          {/* AI Agents */}
+          <div>
+            <SectionHeader label="AI Agents" open={expandedAI} onToggle={() => setExpandedAI(v => !v)} icon={<Bot className="w-3 h-3" />} />
+            {expandedAI && (
+              <div className="space-y-0.5">
+                <NavItem label="Assistente Comercial IA" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
+                <NavItem label="SDR IA" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
+                <NavItem label="Follow-up IA" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
+              </div>
+            )}
+          </div>
+
+          {/* Lifecycle */}
+          <div>
+            <SectionHeader label="Lifecycle" open={expandedLifecycle} onToggle={() => setExpandedLifecycle(v => !v)} icon={<Activity className="w-3 h-3" />} />
+            {expandedLifecycle && (
+              <div className="space-y-0.5">
+                {STAGE_ORDER.map(stage => (
+                  <NavItem
+                    key={stage}
+                    label={STAGE_LABELS[stage]}
+                    icon={<span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />}
+                    count={counters.stages[stage] ?? 0}
+                    active={activeStage === stage}
+                    onClick={() => { setActiveStage(stage); setActiveInbox("all"); }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Team Inbox */}
+          <div>
+            <SectionHeader label="Team Inbox" open={expandedTeam} onToggle={() => setExpandedTeam(v => !v)} icon={<Users className="w-3 h-3" />} />
+            {expandedTeam && (
+              <div className="space-y-0.5">
+                <NavItem label="Comercial" icon={<Users className="w-3.5 h-3.5" />} disabled />
+                <NavItem label="Suporte" icon={<Users className="w-3.5 h-3.5" />} disabled />
+                <NavItem label="Equipe A" icon={<Users className="w-3.5 h-3.5" />} disabled />
+                <NavItem label="Equipe B" icon={<Users className="w-3.5 h-3.5" />} disabled />
+              </div>
+            )}
+          </div>
+
+          {/* Custom Inbox */}
+          <div>
+            <SectionHeader label="Custom Inbox" open={expandedCustom} onToggle={() => setExpandedCustom(v => !v)} icon={<Star className="w-3 h-3" />} />
+            {expandedCustom && (
+              <div className="space-y-0.5">
+                <NavItem label="Follow-up pendente" icon={<Clock className="w-3.5 h-3.5" />} count={counters.pending_fup} active={activeInbox === "pending_fup"} onClick={() => { setActiveInbox("pending_fup"); setActiveStage(null); }} />
+                <NavItem label="Leads VIP" icon={<Star className="w-3.5 h-3.5" />} disabled />
+                <NavItem label="Campanhas" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
+                <NavItem label="Reativação" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* Conversation list */}
+      <aside className="w-80 border-r border-border bg-card flex flex-col shrink-0">
+        <div className="p-3 border-b border-border">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-muted-foreground" />
             <input
@@ -149,35 +333,6 @@ const Conversations: React.FC = () => {
               placeholder="Buscar nome ou telefone"
               className="w-full pl-8 pr-2 py-2 rounded-md bg-muted text-sm text-foreground placeholder:text-muted-foreground border-0 focus:outline-none focus:ring-1 focus:ring-ring"
             />
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              { k: "unread", label: "Não lidas", v: filterUnread, set: setFilterUnread },
-              { k: "mine", label: "Minhas", v: filterMine, set: setFilterMine },
-              { k: "noowner", label: "Sem responsável", v: filterNoOwner, set: setFilterNoOwner },
-              { k: "await", label: "Aguardando", v: filterAwaiting, set: setFilterAwaiting },
-              { k: "fup", label: "Follow-up pendente", v: filterPendingFup, set: setFilterPendingFup },
-            ].map(f => (
-              <button key={f.k} onClick={() => f.set(v => !v)}
-                className={`text-[11px] px-2 py-1 rounded-md border ${f.v ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
-              >{f.label}</button>
-            ))}
-            <select
-              value={filterStage}
-              onChange={e => setFilterStage(e.target.value)}
-              className="text-[11px] px-1.5 py-1 rounded-md border border-border bg-card text-foreground"
-            >
-              <option value="all">Etapa</option>
-              {STAGE_ORDER.map(k => <option key={k} value={k}>{STAGE_LABELS[k]}</option>)}
-            </select>
-            <select
-              value={filterOrigin}
-              onChange={e => setFilterOrigin(e.target.value)}
-              className="text-[11px] px-1.5 py-1 rounded-md border border-border bg-card text-foreground"
-            >
-              <option value="all">Origem</option>
-              {Object.entries(ORIGIN_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
           </div>
         </div>
 
@@ -191,24 +346,20 @@ const Conversations: React.FC = () => {
             const isActive = c.id === selectedId;
             const isUnreadVisual = c.unreadCount > 0 || c.isUnread;
             const owner = c.assignedTo ? memberById[c.assignedTo] : null;
+            // simulated online indicator: last message within 5 minutes
+            const isOnline = (Date.now() - new Date(c.lastMessageAt).getTime()) < 5 * 60 * 1000;
             return (
               <button
                 key={c.id}
                 onClick={() => setSelectedId(c.id)}
-                className={`w-full text-left px-3 py-3 border-b border-border flex gap-3 items-start hover:bg-accent transition-colors ${isActive ? "bg-accent" : ""}`}
+                className={`w-full text-left px-3 py-3 border-b border-border flex gap-3 items-start hover:bg-accent/60 transition-colors ${isActive ? "bg-accent" : ""}`}
               >
                 <div className="relative shrink-0">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center text-sm font-semibold ring-1 ring-border">
                     {lead.name.charAt(0).toUpperCase()}
                   </div>
-                  {/* Mini-avatar of the responsible (Respond.io style) */}
-                  {owner && (
-                    <span
-                      title={owner.displayName}
-                      className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-card"
-                    >
-                      {owner.displayName.charAt(0).toUpperCase()}
-                    </span>
+                  {isOnline && (
+                    <span className="absolute -bottom-0 -right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-card" title="Online" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -216,26 +367,26 @@ const Conversations: React.FC = () => {
                     <p className={`text-sm truncate ${isUnreadVisual ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>{lead.name}</p>
                     <span className="text-[10px] text-muted-foreground shrink-0">{formatTime(c.lastMessageAt)}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground truncate">{lead.phone}</p>
-                  <p className={`text-xs truncate mt-0.5 ${isUnreadVisual ? "text-foreground font-medium" : "text-muted-foreground"}`}>{c.lastMessage || "—"}</p>
-                  <div className="flex items-center gap-1 mt-1 flex-wrap">
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-foreground font-medium">{STAGE_LABELS[lead.stage]}</span>
-                    {isUnreadVisual && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 font-medium">Não lido</span>
-                    )}
-                    {c.awaitingReply && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-medium flex items-center gap-0.5">
-                        <Hourglass className="w-2.5 h-2.5" /> Aguardando
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
+                    <span className="flex items-center gap-0.5">{channelIcon(c.channel)} {c.channel === "instagram" ? "Instagram" : "WhatsApp"}</span>
+                    <span>•</span>
+                    <span className="truncate">{ORIGIN_LABELS[lead.origin]}</span>
+                  </div>
+                  <p className={`text-xs truncate mt-1 ${isUnreadVisual ? "text-foreground" : "text-muted-foreground"}`}>{c.lastMessage || "—"}</p>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-foreground font-medium truncate">{STAGE_LABELS[lead.stage]}</span>
+                    {owner && (
+                      <span className="text-[9px] flex items-center gap-1 text-muted-foreground">
+                        <span className="w-3.5 h-3.5 rounded-full bg-primary/15 text-primary flex items-center justify-center text-[8px] font-bold">
+                          {owner.displayName.charAt(0).toUpperCase()}
+                        </span>
+                        <span className="truncate max-w-[60px]">{owner.displayName.split(" ")[0]}</span>
                       </span>
                     )}
-                    {leadsWithPendingFup.has(lead.id) && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 font-medium">Follow-up</span>
-                    )}
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{ORIGIN_LABELS[lead.origin]}</span>
                   </div>
                 </div>
                 {c.unreadCount > 0 && (
-                  <span className="bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                  <span className="bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shrink-0">
                     {c.unreadCount}
                   </span>
                 )}
@@ -246,7 +397,7 @@ const Conversations: React.FC = () => {
       </aside>
 
       {/* Chat panel */}
-      <section className="flex-1 flex flex-col bg-muted/20">
+      <section className="flex-1 flex flex-col bg-muted/20 min-w-0">
         {!selected || !selectedLead ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-sm text-muted-foreground">Selecione uma conversa</p>
@@ -254,48 +405,47 @@ const Conversations: React.FC = () => {
         ) : (
           <>
             <header className="flex items-center justify-between px-5 py-3 border-b border-border bg-card gap-3 flex-wrap">
-              <button
-                onClick={() => setOpenLeadId(selectedLead.id)}
-                className="flex items-center gap-3 text-left hover:opacity-80"
-              >
-                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">
-                  {selectedLead.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{selectedLead.name}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" />{selectedLead.phone}</p>
-                </div>
-              </button>
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Stage select — syncs with pipeline */}
+              <div className="flex items-center gap-3 min-w-0">
+                <button
+                  onClick={() => setOpenLeadId(selectedLead.id)}
+                  className="flex items-center gap-3 text-left hover:opacity-80 min-w-0"
+                >
+                  <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
+                    {selectedLead.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{selectedLead.name}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" />{selectedLead.phone}</p>
+                  </div>
+                </button>
+                {/* Lifecycle right next to name */}
                 <select
                   value={selectedLead.stage}
                   onChange={e => updateLead(selectedLead.id, { stage: e.target.value as LeadStage })}
                   className="text-[11px] px-2 py-1.5 rounded-md border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  title="Etapa do lead"
+                  title="Lifecycle"
                 >
                   {STAGE_ORDER.map(s => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
                 </select>
-                {/* Owner select — syncs lead + conversation */}
-                <select
-                  value={selected.assignedTo ?? ""}
-                  onChange={e => assignConversation(selected.id, selectedLead.id, e.target.value || null)}
-                  className="text-[11px] px-2 py-1.5 rounded-md border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  title="Responsável"
-                >
-                  <option value="">Sem responsável</option>
-                  {members.map(m => <option key={m.userId} value={m.userId}>{m.displayName}</option>)}
-                </select>
-                <button
-                  onClick={() => setAwaitingReply(selected.id, !selected.awaitingReply)}
-                  className={`flex items-center gap-1 text-xs font-medium px-2 py-1.5 rounded-md border ${selected.awaitingReply ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40" : "border-border text-muted-foreground hover:bg-accent"}`}
-                  title="Aguardando resposta"
-                ><Hourglass className="w-3.5 h-3.5" /> Aguardando</button>
-                <button
-                  onClick={() => markUnread(selected.id, !selected.isUnread)}
-                  className={`flex items-center gap-1 text-xs font-medium px-2 py-1.5 rounded-md border ${selected.isUnread ? "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/40" : "border-border text-muted-foreground hover:bg-accent"}`}
-                  title="Marcar não lido"
-                ><MailOpen className="w-3.5 h-3.5" /> Não lido</button>
+                {/* Owner: admins edit, sellers read-only */}
+                {canEditOwner ? (
+                  <select
+                    value={selected.assignedTo ?? ""}
+                    onChange={e => assignConversation(selected.id, selectedLead.id, e.target.value || null)}
+                    className="text-[11px] px-2 py-1.5 rounded-md border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    title="Responsável"
+                  >
+                    <option value="">Sem responsável</option>
+                    {members.map(m => <option key={m.userId} value={m.userId}>{m.displayName}</option>)}
+                  </select>
+                ) : (
+                  <span className="text-[11px] px-2 py-1.5 rounded-md border border-border bg-muted text-muted-foreground flex items-center gap-1.5" title="Responsável (somente leitura)">
+                    <User className="w-3 h-3" />
+                    {selected.assignedTo ? (memberById[selected.assignedTo]?.displayName ?? "—") : "Sem responsável"}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => setFupOpen(true)}
                   className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md border border-border text-foreground hover:bg-accent"
@@ -340,6 +490,41 @@ const Conversations: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* AI Assistant area */}
+            <div className="border-t border-border bg-card/60 px-4 pt-3 pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <div className="leading-tight">
+                    <p className="text-xs font-semibold text-foreground">Assistente IA</p>
+                    <p className="text-[10px] text-muted-foreground">Sugestões contextuais</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAiOpen(v => !v)}
+                  className="text-[11px] font-medium px-2.5 py-1 rounded-md border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  {aiOpen ? "Ocultar" : "Gerar sugestões"}
+                </button>
+              </div>
+              {aiOpen && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {AI_SUGGESTIONS.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSuggestionClick(s)}
+                      className="text-[11px] px-2.5 py-1.5 rounded-full bg-background border border-border text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <footer className="border-t border-border bg-card p-3 flex gap-2">
