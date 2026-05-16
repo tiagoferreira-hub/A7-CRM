@@ -157,7 +157,7 @@ const KanbanBoard: React.FC = () => {
       <LossReasonModal
         open={!!pendingLoss}
         onClose={() => setPendingLoss(null)}
-        onConfirm={(reason) => { if (pendingLoss) moveLead(pendingLoss.leadId, "perdido", reason); setPendingLoss(null); }}
+        onConfirm={(reason) => { if (pendingLoss) moveLead(pendingLoss.leadId, pendingLoss.stage, reason); setPendingLoss(null); }}
       />
     </div>
   );
