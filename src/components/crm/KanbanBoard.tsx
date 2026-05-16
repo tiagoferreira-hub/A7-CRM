@@ -24,7 +24,7 @@ const KanbanBoard: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showNewLead, setShowNewLead] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [pendingLoss, setPendingLoss] = useState<{ leadId: string } | null>(null);
+  const [pendingLoss, setPendingLoss] = useState<{ leadId: string; stage: LeadStage } | null>(null);
 
   const leadsWithPendingFup = useMemo(() => new Set(
     followUps.filter(f => f.status !== "concluido").map(f => f.leadId)
@@ -140,7 +140,7 @@ const KanbanBoard: React.FC = () => {
               leads={leadsByStage[stage]}
               onOpenDetail={setSelectedLead}
               onDropLead={(leadId, s) => {
-                if (s === "perdido") setPendingLoss({ leadId });
+                if (s === "lead_frio" || s === "perdido") setPendingLoss({ leadId, stage: s });
                 else moveLead(leadId, s);
               }}
             />
@@ -157,7 +157,7 @@ const KanbanBoard: React.FC = () => {
       <LossReasonModal
         open={!!pendingLoss}
         onClose={() => setPendingLoss(null)}
-        onConfirm={(reason) => { if (pendingLoss) moveLead(pendingLoss.leadId, "perdido", reason); setPendingLoss(null); }}
+        onConfirm={(reason) => { if (pendingLoss) moveLead(pendingLoss.leadId, pendingLoss.stage, reason); setPendingLoss(null); }}
       />
     </div>
   );
