@@ -24,7 +24,7 @@ const KanbanBoard: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showNewLead, setShowNewLead] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [pendingLoss, setPendingLoss] = useState<{ leadId: string } | null>(null);
+  const [pendingLoss, setPendingLoss] = useState<{ leadId: string; stage: LeadStage } | null>(null);
 
   const leadsWithPendingFup = useMemo(() => new Set(
     followUps.filter(f => f.status !== "concluido").map(f => f.leadId)
