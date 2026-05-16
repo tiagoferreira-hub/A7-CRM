@@ -19,6 +19,7 @@ const stageColors: Record<LeadStage, string> = {
   compareceu: "bg-crm-success",
   fechou: "bg-crm-success",
   sem_resposta: "bg-muted-foreground",
+  lead_frio: "bg-sky-500",
   perdido: "bg-crm-danger",
 };
 
