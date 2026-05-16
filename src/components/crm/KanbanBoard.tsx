@@ -140,7 +140,7 @@ const KanbanBoard: React.FC = () => {
               leads={leadsByStage[stage]}
               onOpenDetail={setSelectedLead}
               onDropLead={(leadId, s) => {
-                if (s === "perdido") setPendingLoss({ leadId });
+                if (s === "lead_frio" || s === "perdido") setPendingLoss({ leadId, stage: s });
                 else moveLead(leadId, s);
               }}
             />
