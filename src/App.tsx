@@ -16,6 +16,7 @@ import { TagsProvider } from "@/context/TagsContext";
 import { AutomationFlowsProvider } from "@/context/AutomationFlowsContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Landing from "./pages/Landing";
 import OwnerPanel from "./pages/OwnerPanel";
 import NotFound from "./pages/NotFound";
 
@@ -35,8 +36,9 @@ const AppRoutes = () => {
   if (!user) {
     return (
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
   }

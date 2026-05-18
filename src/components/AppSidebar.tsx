@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
+import Logo from "@/components/Logo";
 
 export type AppTab =
   | "home" | "lifecycle" | "conversations" | "contacts" | "agenda"
@@ -42,10 +43,11 @@ const AppSidebar: React.FC<Props> = ({ tab, setTab, collapsed, setCollapsed }) =
   return (
     <aside className={`${width} shrink-0 flex flex-col bg-card border-r border-border transition-all`}>
       <div className={`flex items-center gap-2 px-4 py-4 border-b border-border ${collapsed ? "justify-center px-2" : ""}`}>
-        {!collapsed && (
+        {collapsed ? (
+          <Logo size={28} />
+        ) : (
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold text-foreground tracking-tight">CRM A7</h1>
-            <p className="text-[10px] text-muted-foreground font-medium">Saúde & Estética</p>
+            <Logo size={32} withText />
           </div>
         )}
         <button
