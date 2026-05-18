@@ -60,6 +60,54 @@
     --crm-purple: 270 60% 55%;
     --crm-purple-light: 270 60% 95%;
   }
+
+  .dark {
+    --background: 220 15% 8%;
+    --foreground: 0 0% 95%;
+
+    --card: 220 15% 11%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 220 15% 11%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 220 70% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 16%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 220 15% 14%;
+    --muted-foreground: 220 10% 65%;
+
+    --accent: 220 15% 18%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 220 70% 60%;
+
+    --sidebar-background: 220 15% 10%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 220 70% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 16%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 220 70% 60%;
+
+    --crm-surface: 220 15% 11%;
+    --crm-surface-hover: 220 15% 14%;
+    --crm-column-bg: 220 15% 12%;
+    --crm-success-light: 152 60% 15%;
+    --crm-warning-light: 38 92% 15%;
+    --crm-info-light: 220 70% 18%;
+    --crm-danger-light: 0 72% 18%;
+    --crm-purple-light: 270 60% 18%;
+  }
 }
 
 @layer base {

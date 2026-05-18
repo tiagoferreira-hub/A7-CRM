@@ -2,8 +2,10 @@ import React from "react";
 import {
   Workflow, MessageSquare, Users, Calendar, CheckSquare, Send,
   GitBranch, BarChart3, Settings as SettingsIcon, LogOut, ArrowLeft, Home, ChevronsLeft, ChevronsRight,
+  Sun, Moon,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/hooks/useTheme";
 
 export type AppTab =
   | "home" | "lifecycle" | "conversations" | "contacts" | "agenda"
@@ -18,6 +20,7 @@ interface Props {
 
 const AppSidebar: React.FC<Props> = ({ tab, setTab, collapsed, setCollapsed }) => {
   const { signOut, displayName, user, role, viewAsCompany, setViewAsCompany } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const isSeller = role === "seller";
 
   const items: { key: AppTab; icon: any; label: string; roles?: string[] }[] = [
@@ -97,6 +100,13 @@ const AppSidebar: React.FC<Props> = ({ tab, setTab, collapsed, setCollapsed }) =
             <p className="text-[10px] text-muted-foreground capitalize">{role}</p>
           </div>
         )}
+        <button
+          onClick={toggleTheme}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+        >
+          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
         <button
           onClick={signOut}
           className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
