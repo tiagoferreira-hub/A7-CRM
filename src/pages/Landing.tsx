@@ -21,7 +21,7 @@ const Landing: React.FC = () => {
       {/* Nav */}
       <header className="sticky top-0 z-30 backdrop-blur-md bg-background/70 border-b border-border">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-3">
-          <Logo withText size={32} />
+          <div className="flex items-center gap-2"><Logo size={32} /><span className="text-base font-bold tracking-tight">CRM A7</span></div>
           <nav className="hidden md:flex items-center gap-7 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Recursos</a>
             <a href="#benefits" className="hover:text-foreground transition-colors">Benefícios</a>
@@ -143,7 +143,7 @@ const Landing: React.FC = () => {
       {/* Footer */}
       <footer className="border-t border-border">
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Logo withText size={28} />
+          <div className="flex items-center gap-2"><Logo size={28} /><span className="text-sm font-bold tracking-tight">CRM A7</span></div>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} CRM A7. Todos os direitos reservados.
           </p>
