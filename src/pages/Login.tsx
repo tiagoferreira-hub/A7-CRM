@@ -35,10 +35,14 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
+      <Link to="/" className="absolute top-5 left-5 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+        <ArrowLeft className="w-3.5 h-3.5" /> Voltar
+      </Link>
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">CRM A7</h1>
+        <div className="flex flex-col items-center mb-8">
+          <Logo size={56} />
+          <h1 className="text-2xl font-bold text-foreground tracking-tight mt-4">CRM A7</h1>
           <p className="text-sm text-muted-foreground mt-1">Saúde & Estética</p>
         </div>
 
