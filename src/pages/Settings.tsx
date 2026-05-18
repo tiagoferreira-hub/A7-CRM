@@ -5,9 +5,29 @@ import { Plus, Pencil, Trash2, Check, X, Upload, Image as ImageIcon } from "luci
 
 const Settings: React.FC = () => {
   const { services, addService, updateService, deleteService } = useServices();
+  const { logo, setLogo } = useCompanyLogo();
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [uploadError, setUploadError] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError("");
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Selecione um arquivo de imagem.");
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      setUploadError("Imagem muito grande (máx. 1MB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setLogo(reader.result as string);
+    reader.readAsDataURL(file);
+  };
 
   const handleAdd = () => {
     const trimmed = newName.trim();
