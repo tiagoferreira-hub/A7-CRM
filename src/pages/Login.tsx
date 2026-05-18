@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import Logo from "@/components/Logo";
+import { ArrowLeft } from "lucide-react";
 
 const Login: React.FC = () => {
   const { signIn, signUp } = useAuth();
