@@ -20,6 +20,7 @@ interface Props {
 
 const AppSidebar: React.FC<Props> = ({ tab, setTab, collapsed, setCollapsed }) => {
   const { signOut, displayName, user, role, viewAsCompany, setViewAsCompany } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const isSeller = role === "seller";
 
   const items: { key: AppTab; icon: any; label: string; roles?: string[] }[] = [
