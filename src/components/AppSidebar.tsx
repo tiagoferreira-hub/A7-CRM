@@ -101,6 +101,13 @@ const AppSidebar: React.FC<Props> = ({ tab, setTab, collapsed, setCollapsed }) =
           </div>
         )}
         <button
+          onClick={toggleTheme}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+        >
+          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+        <button
           onClick={signOut}
           className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           title="Sair"
