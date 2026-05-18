@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useServices } from "@/context/ServicesContext";
-import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { useCompanyLogo } from "@/hooks/useCompanyLogo";
+import { Plus, Pencil, Trash2, Check, X, Upload, Image as ImageIcon } from "lucide-react";
 
 const Settings: React.FC = () => {
   const { services, addService, updateService, deleteService } = useServices();
