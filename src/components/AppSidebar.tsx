@@ -2,8 +2,10 @@ import React from "react";
 import {
   Workflow, MessageSquare, Users, Calendar, CheckSquare, Send,
   GitBranch, BarChart3, Settings as SettingsIcon, LogOut, ArrowLeft, Home, ChevronsLeft, ChevronsRight,
+  Sun, Moon,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/hooks/useTheme";
 
 export type AppTab =
   | "home" | "lifecycle" | "conversations" | "contacts" | "agenda"
