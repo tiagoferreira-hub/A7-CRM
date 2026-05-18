@@ -43,13 +43,9 @@ const AppSidebar: React.FC<Props> = ({ tab, setTab, collapsed, setCollapsed }) =
   return (
     <aside className={`${width} shrink-0 flex flex-col bg-card border-r border-border transition-all`}>
       <div className={`flex items-center gap-2 px-4 py-4 border-b border-border ${collapsed ? "justify-center px-2" : ""}`}>
-        {collapsed ? (
-          <Logo size={28} />
-        ) : (
-          <div className="flex-1 min-w-0">
-            <Logo size={32} withText />
-          </div>
-        )}
+        <div className={collapsed ? "" : "flex-1 min-w-0 flex items-center"}>
+          <Logo size={collapsed ? 32 : 40} />
+        </div>
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
