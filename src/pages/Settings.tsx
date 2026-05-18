@@ -49,8 +49,50 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8">
-      <h2 className="text-xl font-bold text-foreground mb-6">Configurações</h2>
+    <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+      <h2 className="text-xl font-bold text-foreground">Configurações</h2>
+
+      <div className="bg-card rounded-xl border border-border p-6">
+        <h3 className="text-base font-semibold text-foreground mb-1">Logo da empresa</h3>
+        <p className="text-xs text-muted-foreground mb-4">
+          Aparece no topo do menu lateral. Recomendado: PNG transparente, até 1MB.
+        </p>
+
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-lg border border-border bg-background flex items-center justify-center overflow-hidden shrink-0">
+            {logo ? (
+              <img src={logo} alt="Logo atual" className="w-full h-full object-contain p-2" />
+            ) : (
+              <ImageIcon className="w-7 h-7 text-muted-foreground" />
+            )}
+          </div>
+
+          <div className="flex-1 flex flex-wrap gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              <Upload className="w-4 h-4" /> {logo ? "Trocar logo" : "Enviar logo"}
+            </button>
+            {logo && (
+              <button
+                onClick={() => setLogo(null)}
+                className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" /> Remover
+              </button>
+            )}
+          </div>
+        </div>
+        {uploadError && <p className="text-xs text-destructive mt-3">{uploadError}</p>}
+      </div>
 
       <div className="bg-card rounded-xl border border-border p-6">
         <h3 className="text-base font-semibold text-foreground mb-4">Serviços</h3>
