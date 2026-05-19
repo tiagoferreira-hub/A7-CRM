@@ -26,6 +26,7 @@ const Tasks: React.FC = () => {
   const [title, setTitle] = useState("");
   const [leadId, setLeadId] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [editing, setEditing] = useState<Task | null>(null);
 
   const handleAdd = async () => {
     if (!title.trim() || !user) return;
