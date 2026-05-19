@@ -22,6 +22,7 @@ export const useCampaigns = () => {
 const rowTo = (r: any): Campaign => ({
   id: r.id, name: r.name, channel: r.channel, status: r.status,
   scheduledAt: r.scheduled_at, sentCount: r.sent_count ?? 0, repliedCount: r.replied_count ?? 0,
+  payload: r.payload ?? {},
 });
 
 export const CampaignsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
