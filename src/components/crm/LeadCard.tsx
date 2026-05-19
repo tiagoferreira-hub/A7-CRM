@@ -78,6 +78,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
         <span>{lead.phone}</span>
       </div>
 
+      <div className="mb-2" onClick={(e) => e.stopPropagation()}>
+        <StageDropdown
+          value={lead.stage}
+          size="sm"
+          onChange={(s) => moveLead(lead.id, s)}
+          className="w-full justify-between"
+        />
+      </div>
+
       <div className="flex items-center gap-1.5 flex-wrap mb-2">
         <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${originColors[lead.origin] ?? "bg-muted text-muted-foreground"}`}>
           {ORIGIN_LABELS[lead.origin]}
