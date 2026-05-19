@@ -84,6 +84,7 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const [fupTime, setFupTime] = useState("09:00");
   const [fupNotes, setFupNotes] = useState("");
   const [newTag, setNewTag] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const leadAppts = useMemo(
     () => lead ? appointments.filter(a => a.leadId === lead.id).sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)) : [],
@@ -109,7 +110,6 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
     setEditing(true);
   };
 
-  const [saving, setSaving] = useState(false);
   const saveEdit = async () => {
     const val = typeof form.value === "string"
       ? parseFloat((form.value as string).replace(/[^\d.,]/g, "").replace(",", ".")) || 0
