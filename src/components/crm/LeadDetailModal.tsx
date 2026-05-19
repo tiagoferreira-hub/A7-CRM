@@ -462,8 +462,8 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                 </div>
               </div>
               <div className="flex justify-end gap-2 px-6 py-4 border-t border-border bg-muted/30">
-                <button onClick={() => setEditing(false)} className="text-sm font-medium h-10 px-4 rounded-lg border border-input bg-background hover:bg-accent transition-colors">Cancelar</button>
-                <button onClick={saveEdit} className="text-sm font-medium h-10 px-4 rounded-lg bg-primary text-primary-foreground hover:opacity-90">Salvar</button>
+                <button onClick={() => setEditing(false)} disabled={saving} className="text-sm font-medium h-10 px-4 rounded-lg border border-input bg-background hover:bg-accent transition-colors">Cancelar</button>
+                <button onClick={saveEdit} disabled={saving} className="text-sm font-medium h-10 px-4 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50">{saving ? "Salvando..." : "Salvar"}</button>
               </div>
             </>
           )}
