@@ -1,12 +1,9 @@
 export type LeadStage =
   | "lead_entrou"
   | "hot_lead"
-  | "em_atendimento"
-  | "qualificado"
   | "agendado"
   | "compareceu"
   | "fechou"
-  | "sem_resposta"
   | "lead_frio"
   | "perdido";
 
@@ -43,21 +40,17 @@ export interface Lead {
 export const STAGE_LABELS: Record<LeadStage, string> = {
   lead_entrou: "🆕 Novo Lead",
   hot_lead: "🔥 Lead Quente",
-  em_atendimento: "💬 Em Atendimento",
-  qualificado: "Qualificado",
   agendado: "📅 Agendado",
   compareceu: "✅ Compareceu",
   fechou: "💰 Fechou",
-  sem_resposta: "Sem resposta",
   lead_frio: "🧊 Lead Frio",
   perdido: "❌ Perdido",
 };
 
-// Visible/active lifecycle stages
+// Visible/active lifecycle stages (Kanban order)
 export const STAGE_ORDER: LeadStage[] = [
   "lead_entrou",
   "hot_lead",
-  "em_atendimento",
   "agendado",
   "compareceu",
   "fechou",
@@ -67,15 +60,23 @@ export const STAGE_ORDER: LeadStage[] = [
 export const STAGE_ALL: LeadStage[] = [
   "lead_entrou",
   "hot_lead",
-  "em_atendimento",
-  "qualificado",
   "agendado",
   "compareceu",
   "fechou",
-  "sem_resposta",
   "lead_frio",
   "perdido",
 ];
+
+// Groups for the stage dropdown (Respond.io style)
+export const LIFECYCLE_STAGES: LeadStage[] = [
+  "lead_entrou",
+  "hot_lead",
+  "agendado",
+  "compareceu",
+  "fechou",
+];
+
+export const LOSS_STAGES: LeadStage[] = ["lead_frio"];
 
 export const ORIGIN_LABELS: Record<LeadOrigin, string> = {
   manual: "Manual",
