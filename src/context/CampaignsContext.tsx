@@ -6,7 +6,8 @@ import { Campaign, CampaignChannel, CampaignStatus } from "@/types/automations";
 interface Ctx {
   campaigns: Campaign[];
   loading: boolean;
-  addCampaign: (c: { name: string; channel: CampaignChannel; scheduledAt?: string | null }) => Promise<void>;
+  addCampaign: (c: { name: string; channel: CampaignChannel; scheduledAt?: string | null; payload?: any }) => Promise<void>;
+  updateCampaign: (id: string, updates: { name?: string; channel?: CampaignChannel; scheduledAt?: string | null; payload?: any }) => Promise<void>;
   setCampaignStatus: (id: string, status: CampaignStatus) => Promise<void>;
   deleteCampaign: (id: string) => Promise<void>;
 }
