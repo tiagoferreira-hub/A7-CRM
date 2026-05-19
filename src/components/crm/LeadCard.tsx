@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Lead, ORIGIN_LABELS } from "@/types/lead";
+import { Lead, ORIGIN_LABELS, LeadStage } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
 import { useServices } from "@/context/ServicesContext";
 import { useTags } from "@/context/TagsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
+import StageDropdown from "./StageDropdown";
 import { Phone, MessageSquare, Pencil, Check, X, User } from "lucide-react";
 
 interface LeadCardProps {
@@ -27,7 +28,7 @@ const originColors: Record<string, string> = {
 };
 
 const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
-  const { updateLead } = useLeads();
+  const { updateLead, moveLead } = useLeads();
   const { services } = useServices();
   const { tagsForLead } = useTags();
   const members = useCompanyMembers();
@@ -75,6 +76,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
         <Phone className="w-3 h-3" />
         <span>{lead.phone}</span>
+      </div>
+
+      <div className="mb-2" onClick={(e) => e.stopPropagation()}>
+        <StageDropdown
+          value={lead.stage}
+          size="sm"
+          onChange={(s) => moveLead(lead.id, s)}
+          className="w-full justify-between"
+        />
       </div>
 
       <div className="flex items-center gap-1.5 flex-wrap mb-2">

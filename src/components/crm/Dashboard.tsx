@@ -58,9 +58,8 @@ const Dashboard: React.FC = () => {
   // Funnel conversion rates
   const stageCount = (stages: string[]) => allInPeriod.filter((l) => stages.includes(l.stage)).length;
   const funnelStages = [
-    { from: "Lead entrou", to: "Em atendimento", rate: totalLeads > 0 ? (stageCount(["em_atendimento", "qualificado", "agendado", "compareceu", "fechou"]) / totalLeads * 100) : 0 },
-    { from: "Em atendimento", to: "Qualificado", rate: stageCount(["em_atendimento", "qualificado", "agendado", "compareceu", "fechou"]) > 0 ? (stageCount(["qualificado", "agendado", "compareceu", "fechou"]) / stageCount(["em_atendimento", "qualificado", "agendado", "compareceu", "fechou"]) * 100) : 0 },
-    { from: "Qualificado", to: "Agendado", rate: stageCount(["qualificado", "agendado", "compareceu", "fechou"]) > 0 ? (stageCount(["agendado", "compareceu", "fechou"]) / stageCount(["qualificado", "agendado", "compareceu", "fechou"]) * 100) : 0 },
+    { from: "Lead entrou", to: "Lead Quente", rate: totalLeads > 0 ? (stageCount(["hot_lead", "agendado", "compareceu", "fechou"]) / totalLeads * 100) : 0 },
+    { from: "Lead Quente", to: "Agendado", rate: stageCount(["hot_lead", "agendado", "compareceu", "fechou"]) > 0 ? (stageCount(["agendado", "compareceu", "fechou"]) / stageCount(["hot_lead", "agendado", "compareceu", "fechou"]) * 100) : 0 },
     { from: "Agendado", to: "Compareceu", rate: stageCount(["agendado", "compareceu", "fechou"]) > 0 ? (stageCount(["compareceu", "fechou"]) / stageCount(["agendado", "compareceu", "fechou"]) * 100) : 0 },
     { from: "Compareceu", to: "Fechou", rate: stageCount(["compareceu", "fechou"]) > 0 ? (stageCount(["fechou"]) / stageCount(["compareceu", "fechou"]) * 100) : 0 },
   ];

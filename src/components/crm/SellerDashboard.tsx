@@ -64,9 +64,9 @@ const SellerDashboard: React.FC = () => {
   const agendamentos = filtered.filter(l => ["agendado", "compareceu", "fechou"].includes(l.stage)).length;
   const vendas = filtered.filter(l => l.stage === "fechou").length;
 
-  // Follow-ups: leads em atendimento ou qualificado sem interação há 2+ dias
+  // Follow-ups: leads quentes sem interação há 2+ dias
   const followUpsPendentes = leads.filter(l =>
-    ["em_atendimento", "qualificado"].includes(l.stage) &&
+    l.stage === "hot_lead" &&
     (new Date().getTime() - new Date(l.lastInteraction).getTime()) > 2 * 86400000
   ).length;
 

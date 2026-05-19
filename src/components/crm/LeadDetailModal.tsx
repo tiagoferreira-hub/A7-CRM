@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { Lead, STAGE_LABELS, STAGE_ORDER, ORIGIN_LABELS, ORIGIN_OPTIONS, LeadStage, LeadOrigin } from "@/types/lead";
+import { useNavigate } from "react-router-dom";
+import { Lead, STAGE_LABELS, ORIGIN_LABELS, ORIGIN_OPTIONS, LeadStage, LeadOrigin } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
 import { useServices } from "@/context/ServicesContext";
 import { useAppointments } from "@/context/AppointmentsContext";
@@ -10,7 +11,12 @@ import { useLeadHistory } from "@/hooks/useLeadHistory";
 import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_STATUS_LABELS } from "@/types/appointment";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LossReasonModal from "./LossReasonModal";
-import { Plus, X as XIcon } from "lucide-react";
+import StageDropdown from "./StageDropdown";
+import {
+  Phone, Plus, X as XIcon, MessageCircle, Instagram, Megaphone, Hand,
+  Search as SearchIcon, Sparkles, MessageSquare, CalendarPlus, ListTodo,
+  Clock, AlertCircle, Tag as TagIcon, DollarSign, Briefcase, FileText,
+} from "lucide-react";
 
 interface Props {
   lead: Lead | null;
@@ -27,10 +33,24 @@ const formatDateTime = (s: string) =>
     hour: "2-digit", minute: "2-digit",
   });
 
+const daysSince = (s: string) => Math.floor((Date.now() - new Date(s).getTime()) / 86400000);
+
+const originBadge = (origin: LeadOrigin) => {
+  const map: Record<LeadOrigin, { icon: any; color: string; bg: string }> = {
+    manual: { icon: Hand, color: "text-muted-foreground", bg: "bg-muted" },
+    bio_instagram: { icon: Instagram, color: "text-crm-purple", bg: "bg-crm-purple-light" },
+    meta: { icon: Megaphone, color: "text-crm-info", bg: "bg-crm-info-light" },
+    google_ads: { icon: SearchIcon, color: "text-crm-warning", bg: "bg-crm-warning-light" },
+    indicacao: { icon: Sparkles, color: "text-crm-success", bg: "bg-crm-success-light" },
+    organico: { icon: MessageCircle, color: "text-primary", bg: "bg-primary/10" },
+  };
+  return map[origin];
+};
+
 const eventLabel = (e: { eventType: string; payload: any }) => {
   switch (e.eventType) {
     case "created": return "Lead criado";
-    case "stage_changed": return `Etapa: ${STAGE_LABELS[e.payload?.from as LeadStage] ?? e.payload?.from} → ${STAGE_LABELS[e.payload?.to as LeadStage] ?? e.payload?.to}`;
+    case "stage_changed": return `${STAGE_LABELS[e.payload?.from as LeadStage] ?? e.payload?.from} → ${STAGE_LABELS[e.payload?.to as LeadStage] ?? e.payload?.to}`;
     case "assignee_changed": return "Responsável alterado";
     case "followup_created": return "Follow-up criado";
     case "followup_completed": return "Follow-up concluído";
@@ -40,11 +60,18 @@ const eventLabel = (e: { eventType: string; payload: any }) => {
   }
 };
 
+const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+    {children}
+  </h4>
+);
+
 const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
+  const navigate = useNavigate();
   const { updateLead, moveLead } = useLeads();
   const { services } = useServices();
   const { appointments } = useAppointments();
-  const { addFollowUp } = useFollowUps();
+  const { followUps, addFollowUp } = useFollowUps();
   const { tags, createTag, assignTag, unassignTag, tagsForLead } = useTags();
   const members = useCompanyMembers();
   const history = useLeadHistory(lead?.id);
@@ -62,6 +89,13 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
     () => lead ? appointments.filter(a => a.leadId === lead.id).sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)) : [],
     [appointments, lead]
   );
+  const nextFollowUp = useMemo(
+    () => lead ? followUps
+      .filter(f => f.leadId === lead.id && f.status !== "concluido")
+      .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))[0]
+      : null,
+    [followUps, lead]
+  );
   const leadTags = lead ? tagsForLead(lead.id) : [];
   const leadTagIds = new Set(leadTags.map(t => t.id));
 
@@ -70,7 +104,7 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const startEdit = () => {
     setForm({
       name: lead.name, phone: lead.phone, origin: lead.origin, service: lead.service,
-      value: lead.value, lastMessage: lead.lastMessage, observations: lead.observations,
+      value: lead.value, observations: lead.observations, assignedTo: lead.assignedTo,
     });
     setEditing(true);
   };
@@ -119,175 +153,310 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
     setNewTag("");
   };
 
-  const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (
-    <div>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      <div className="text-sm text-foreground mt-0.5">{value}</div>
-    </div>
-  );
-
-  const InputField = ({ label, field, textarea }: { label: string; field: keyof Lead; textarea?: boolean }) => {
-    const Tag = textarea ? "textarea" : "input";
-    return (
-      <div>
-        <label className="text-xs font-medium text-muted-foreground">{label}</label>
-        <Tag
-          className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none"
-          value={(form[field] as string) ?? ""}
-          onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-          rows={textarea ? 3 : undefined}
-        />
-      </div>
-    );
-  };
+  const origBadge = originBadge(lead.origin);
+  const OriginIcon = origBadge.icon;
+  const daysNoResp = daysSince(lead.lastInteraction);
+  const noRespAlert = daysNoResp > 2;
 
   return (
     <>
       <Dialog open={open} onOpenChange={() => onClose()}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="text-lg">{lead.name}</DialogTitle></DialogHeader>
-
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 rounded-xl shadow-lg gap-0">
           {!editing ? (
-            <div className="space-y-4 mt-2">
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Telefone" value={lead.phone} />
-                <Field label="Etapa atual" value={
+            <>
+              {/* HEADER */}
+              <DialogHeader className="px-6 pt-6 pb-5 border-b border-border space-y-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <DialogTitle className="text-2xl font-bold text-foreground truncate">
+                      {lead.name}
+                    </DialogTitle>
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Phone className="w-3.5 h-3.5" />
+                        {lead.phone}
+                      </span>
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${origBadge.bg} ${origBadge.color}`}>
+                        <OriginIcon className="w-3 h-3" />
+                        {ORIGIN_LABELS[lead.origin]}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap pt-1">
+                  <StageDropdown value={lead.stage} onChange={handleStageChange} />
                   <select
-                    className="text-sm border border-input rounded-md px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-                    value={lead.stage}
-                    onChange={(e) => handleStageChange(e.target.value as LeadStage)}
-                  >
-                    {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
-                  </select>
-                } />
-                <Field label="Origem" value={ORIGIN_LABELS[lead.origin]} />
-                <Field label="Serviço" value={lead.service} />
-                <Field label="Valor" value={formatCurrency(lead.value)} />
-                <Field label="Responsável" value={
-                  <select
-                    className="text-sm border border-input rounded-md px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="text-sm h-10 border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
                     value={lead.assignedTo ?? ""}
                     onChange={(e) => handleAssigneeChange(e.target.value)}
                   >
                     <option value="">Sem responsável</option>
                     {members.map(m => <option key={m.userId} value={m.userId}>{m.displayName}</option>)}
                   </select>
-                } />
-              </div>
+                  <div className="ml-auto flex items-center gap-2">
+                    <button onClick={() => setFupOpen(true)}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium h-10 px-3 rounded-lg border border-input bg-background hover:bg-accent transition-colors">
+                      <Clock className="w-4 h-4" /> Follow-up
+                    </button>
+                    <button
+                      className="inline-flex items-center gap-1.5 text-sm font-medium h-10 px-3 rounded-lg border border-input bg-background hover:bg-accent transition-colors">
+                      <ListTodo className="w-4 h-4" /> Tarefa
+                    </button>
+                    <button
+                      onClick={() => navigate("/agenda")}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium h-10 px-3 rounded-lg border border-input bg-background hover:bg-accent transition-colors">
+                      <CalendarPlus className="w-4 h-4" /> Agendar
+                    </button>
+                  </div>
+                </div>
+              </DialogHeader>
 
-              {lead.stage === "perdido" && lead.lossReason && (
-                <Field label="Motivo da perda" value={<span className="text-rose-600 dark:text-rose-400">{lead.lossReason}</span>} />
-              )}
+              {/* BODY */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                {/* Left column */}
+                <div className="space-y-5">
+                  <div>
+                    <SectionLabel>Informações comerciais</SectionLabel>
+                    <div className="space-y-3 rounded-lg border border-border p-4">
+                      <div className="flex items-start gap-2.5">
+                        <OriginIcon className="w-4 h-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <div className="text-[11px] text-muted-foreground">Origem</div>
+                          <div className="text-sm text-foreground">{ORIGIN_LABELS[lead.origin]}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <Briefcase className="w-4 h-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <div className="text-[11px] text-muted-foreground">Serviço de interesse</div>
+                          <div className="text-sm text-foreground">{lead.service || "—"}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <DollarSign className="w-4 h-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <div className="text-[11px] text-muted-foreground">Valor</div>
+                          <div className="text-sm font-semibold text-primary">{formatCurrency(lead.value)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-              <Field label="Última interação" value={formatDateTime(lead.lastInteraction)} />
-              <Field label="Última mensagem" value={lead.lastMessage} />
-              <Field label="Observações" value={lead.observations || "—"} />
+                  <div>
+                    <SectionLabel>Observações</SectionLabel>
+                    <div className="rounded-lg border border-border p-4 text-sm text-foreground whitespace-pre-wrap min-h-[60px]">
+                      {lead.observations || <span className="text-muted-foreground">Sem observações.</span>}
+                    </div>
+                  </div>
 
-              {/* Tags */}
-              <div>
-                <span className="text-xs font-medium text-muted-foreground">Tags</span>
-                <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                  {leadTags.map(t => (
-                    <span key={t.id} className="text-xs px-2 py-0.5 rounded-full flex items-center gap-1" style={{ backgroundColor: `${t.color}22`, color: t.color }}>
-                      {t.name}
-                      <button onClick={() => unassignTag(lead.id, t.id)} className="hover:opacity-70"><XIcon className="w-3 h-3" /></button>
-                    </span>
-                  ))}
-                  <div className="flex items-center gap-1">
-                    <input
-                      list="tag-options"
-                      value={newTag}
-                      onChange={e => setNewTag(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(); } }}
-                      placeholder="Adicionar tag..."
-                      className="text-xs border border-input rounded-md px-2 py-0.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-                    />
-                    <datalist id="tag-options">
-                      {tags.filter(t => !leadTagIds.has(t.id)).map(t => <option key={t.id} value={t.name} />)}
-                    </datalist>
-                    <button onClick={handleAddTag} className="p-1 rounded hover:bg-accent text-muted-foreground"><Plus className="w-3.5 h-3.5" /></button>
+                  <div>
+                    <SectionLabel>Tags</SectionLabel>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {leadTags.map(t => (
+                        <span key={t.id} className="text-xs px-2 py-1 rounded-full flex items-center gap-1" style={{ backgroundColor: `${t.color}22`, color: t.color }}>
+                          {t.name}
+                          <button onClick={() => unassignTag(lead.id, t.id)} className="hover:opacity-70"><XIcon className="w-3 h-3" /></button>
+                        </span>
+                      ))}
+                      <div className="flex items-center gap-1">
+                        <input
+                          list="tag-options-detail"
+                          value={newTag}
+                          onChange={e => setNewTag(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(); } }}
+                          placeholder="Adicionar tag..."
+                          className="text-xs h-8 border border-input rounded-md px-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                        />
+                        <datalist id="tag-options-detail">
+                          {tags.filter(t => !leadTagIds.has(t.id)).map(t => <option key={t.id} value={t.name} />)}
+                        </datalist>
+                        <button onClick={handleAddTag} className="p-1.5 rounded-md hover:bg-accent text-muted-foreground"><Plus className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right column */}
+                <div className="space-y-5">
+                  <div>
+                    <SectionLabel>Atividade</SectionLabel>
+                    <div className="space-y-2.5">
+                      <div className={`flex items-center gap-2.5 rounded-lg border p-3 ${
+                        noRespAlert ? "border-crm-warning/40 bg-crm-warning-light" : "border-border"
+                      }`}>
+                        {noRespAlert
+                          ? <AlertCircle className="w-4 h-4 text-crm-warning" />
+                          : <Clock className="w-4 h-4 text-muted-foreground" />}
+                        <div className="text-sm">
+                          <div className={`font-medium ${noRespAlert ? "text-crm-warning" : "text-foreground"}`}>
+                            {daysNoResp === 0 ? "Sem mensagens hoje" : `${daysNoResp} ${daysNoResp === 1 ? "dia" : "dias"} sem resposta`}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">Última: {formatDateTime(lead.lastInteraction)}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 rounded-lg border border-border p-3">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <div className="text-sm">
+                          <div className="font-medium text-foreground">Próximo follow-up</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {nextFollowUp ? formatDateTime(nextFollowUp.scheduledAt) : "Não agendado"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <SectionLabel>Agendamentos</SectionLabel>
+                    {leadAppts.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Nenhum agendamento</p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {leadAppts.map(a => (
+                          <li key={a.id} className="text-sm text-foreground flex items-center justify-between border border-border rounded-md px-3 py-2">
+                            <span>{APPOINTMENT_TYPE_LABELS[a.type]} — {formatDateTime(a.scheduledAt)}</span>
+                            <span className="text-xs text-muted-foreground">{APPOINTMENT_STATUS_LABELS[a.status]}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div>
+                    <SectionLabel>Histórico</SectionLabel>
+                    {history.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Sem eventos.</p>
+                    ) : (
+                      <ul className="space-y-1.5 max-h-40 overflow-y-auto">
+                        {history.map(e => (
+                          <li key={e.id} className="text-xs text-foreground flex items-start justify-between gap-2 border-l-2 border-border pl-2.5 py-0.5">
+                            <span>{eventLabel(e)}</span>
+                            <span className="text-muted-foreground shrink-0">{formatDateTime(e.createdAt)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Appointments */}
-              <div>
-                <span className="text-xs font-medium text-muted-foreground">Agendamentos</span>
-                {leadAppts.length === 0 ? (
-                  <p className="text-sm text-muted-foreground mt-0.5">Nenhum agendamento</p>
-                ) : (
-                  <ul className="mt-1 space-y-1">
-                    {leadAppts.map(a => (
-                      <li key={a.id} className="text-sm text-foreground flex items-center justify-between border border-border rounded-md px-2.5 py-1.5">
-                        <span>{APPOINTMENT_TYPE_LABELS[a.type]} — {formatDateTime(a.scheduledAt)}</span>
-                        <span className="text-xs text-muted-foreground">{APPOINTMENT_STATUS_LABELS[a.status]}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              {/* History */}
-              <div>
-                <span className="text-xs font-medium text-muted-foreground">Histórico</span>
-                {history.length === 0 ? (
-                  <p className="text-sm text-muted-foreground mt-0.5">Sem eventos.</p>
-                ) : (
-                  <ul className="mt-1 space-y-1 max-h-40 overflow-y-auto">
-                    {history.map(e => (
-                      <li key={e.id} className="text-xs text-foreground flex items-start justify-between gap-2 border-l-2 border-border pl-2">
-                        <span>{eventLabel(e)}</span>
-                        <span className="text-muted-foreground shrink-0">{formatDateTime(e.createdAt)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button onClick={() => setFupOpen(true)}
-                  className="text-sm font-medium px-4 py-2 rounded-lg border border-border text-foreground hover:bg-accent">
-                  Novo follow-up
-                </button>
+              {/* FOOTER */}
+              <div className="flex justify-end gap-2 px-6 py-4 border-t border-border bg-muted/30">
                 <button onClick={startEdit}
-                  className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90">
+                  className="text-sm font-medium h-10 px-4 rounded-lg border border-input bg-background hover:bg-accent transition-colors">
                   Editar lead
                 </button>
+                <button
+                  onClick={() => { onClose(); navigate(`/conversas?lead=${lead.id}`); }}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium h-10 px-4 rounded-lg bg-primary text-primary-foreground hover:opacity-90">
+                  <MessageSquare className="w-4 h-4" /> Ver conversa
+                </button>
               </div>
-            </div>
+            </>
           ) : (
-            <div className="space-y-3 mt-2">
-              <InputField label="Nome" field="name" />
-              <InputField label="Telefone" field="phone" />
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Origem</label>
-                <select
-                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-                  value={form.origin ?? lead.origin}
-                  onChange={(e) => setForm({ ...form, origin: e.target.value as LeadOrigin })}
-                >
-                  {ORIGIN_OPTIONS.map((o) => <option key={o} value={o}>{ORIGIN_LABELS[o]}</option>)}
-                </select>
+            <>
+              <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+                <DialogTitle className="text-xl font-semibold">Editar lead</DialogTitle>
+              </DialogHeader>
+              <div className="p-6 space-y-6">
+                {/* Básicos */}
+                <div className="space-y-3">
+                  <SectionLabel>Informações básicas</SectionLabel>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">Nome</label>
+                      <input value={(form.name as string) ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        className="w-full h-10 text-sm border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">Telefone</label>
+                      <input value={(form.phone as string) ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        className="w-full h-10 text-sm border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border" />
+
+                {/* Comercial */}
+                <div className="space-y-3">
+                  <SectionLabel>Comercial</SectionLabel>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">Origem</label>
+                      <select value={form.origin ?? lead.origin}
+                        onChange={(e) => setForm({ ...form, origin: e.target.value as LeadOrigin })}
+                        className="w-full h-10 text-sm border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring">
+                        {ORIGIN_OPTIONS.map((o) => <option key={o} value={o}>{ORIGIN_LABELS[o]}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">Serviço de interesse</label>
+                      <select value={form.service ?? lead.service}
+                        onChange={(e) => setForm({ ...form, service: e.target.value })}
+                        className="w-full h-10 text-sm border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring">
+                        <option value="">Selecione o serviço</option>
+                        {services.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">Valor (R$)</label>
+                      <input value={(form.value as any) ?? ""} onChange={(e) => setForm({ ...form, value: e.target.value as any })}
+                        className="w-full h-10 text-sm border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">Responsável</label>
+                      <select value={(form.assignedTo as string) ?? ""}
+                        onChange={(e) => setForm({ ...form, assignedTo: e.target.value || null } as any)}
+                        className="w-full h-10 text-sm border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring">
+                        <option value="">Sem responsável</option>
+                        {members.map(m => <option key={m.userId} value={m.userId}>{m.displayName}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border" />
+
+                {/* Observações & Tags */}
+                <div className="space-y-3">
+                  <SectionLabel>Observações</SectionLabel>
+                  <textarea rows={4} value={(form.observations as string) ?? ""}
+                    onChange={(e) => setForm({ ...form, observations: e.target.value })}
+                    className="w-full text-sm border border-input rounded-lg px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none" />
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                      <TagIcon className="w-3.5 h-3.5" /> Tags
+                    </label>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {leadTags.map(t => (
+                        <span key={t.id} className="text-xs px-2 py-1 rounded-full flex items-center gap-1" style={{ backgroundColor: `${t.color}22`, color: t.color }}>
+                          {t.name}
+                          <button onClick={() => unassignTag(lead.id, t.id)} className="hover:opacity-70"><XIcon className="w-3 h-3" /></button>
+                        </span>
+                      ))}
+                      <input
+                        list="tag-options-edit"
+                        value={newTag}
+                        onChange={e => setNewTag(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(); } }}
+                        placeholder="Adicionar tag..."
+                        className="text-xs h-8 border border-input rounded-md px-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                      />
+                      <datalist id="tag-options-edit">
+                        {tags.filter(t => !leadTagIds.has(t.id)).map(t => <option key={t.id} value={t.name} />)}
+                      </datalist>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Serviço de interesse</label>
-                <select
-                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-                  value={form.service ?? lead.service}
-                  onChange={(e) => setForm({ ...form, service: e.target.value })}
-                >
-                  <option value="">Selecione o serviço</option>
-                  {services.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
-                </select>
+              <div className="flex justify-end gap-2 px-6 py-4 border-t border-border bg-muted/30">
+                <button onClick={() => setEditing(false)} className="text-sm font-medium h-10 px-4 rounded-lg border border-input bg-background hover:bg-accent transition-colors">Cancelar</button>
+                <button onClick={saveEdit} className="text-sm font-medium h-10 px-4 rounded-lg bg-primary text-primary-foreground hover:opacity-90">Salvar</button>
               </div>
-              <InputField label="Valor (R$)" field="value" />
-              <InputField label="Última mensagem" field="lastMessage" textarea />
-              <InputField label="Observações" field="observations" textarea />
-              <div className="flex gap-2 justify-end pt-2">
-                <button onClick={() => setEditing(false)} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>
-                <button onClick={saveEdit} className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90">Salvar</button>
-              </div>
-            </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
@@ -295,30 +464,30 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
       <LossReasonModal open={lossOpen} onClose={() => { setLossOpen(false); setPendingStage(null); }} onConfirm={confirmLoss} />
 
       <Dialog open={fupOpen} onOpenChange={setFupOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-xl shadow-lg">
           <DialogHeader><DialogTitle>Novo follow-up — {lead.name}</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                <label className="text-xs font-medium text-foreground mb-1.5 block">Data</label>
                 <input type="date" value={fupDate} onChange={e => setFupDate(e.target.value)}
-                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+                  className="w-full h-10 text-sm border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Horário</label>
+                <label className="text-xs font-medium text-foreground mb-1.5 block">Horário</label>
                 <input type="time" value={fupTime} onChange={e => setFupTime(e.target.value)}
-                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+                  className="w-full h-10 text-sm border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Observação</label>
+              <label className="text-xs font-medium text-foreground mb-1.5 block">Observação</label>
               <textarea value={fupNotes} onChange={e => setFupNotes(e.target.value)} rows={2}
-                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none" />
+                className="w-full text-sm border border-input rounded-lg px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none" />
             </div>
             <div className="flex gap-2 justify-end pt-2">
-              <button onClick={() => setFupOpen(false)} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>
+              <button onClick={() => setFupOpen(false)} className="text-sm font-medium h-10 px-4 rounded-lg border border-input bg-background hover:bg-accent">Cancelar</button>
               <button onClick={handleCreateFup} disabled={!fupDate}
-                className="text-sm font-medium px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40">Criar</button>
+                className="text-sm font-medium h-10 px-4 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40">Criar</button>
             </div>
           </div>
         </DialogContent>

@@ -13,12 +13,9 @@ interface KanbanColumnProps {
 const stageColors: Record<LeadStage, string> = {
   lead_entrou: "bg-crm-info",
   hot_lead: "bg-crm-danger",
-  em_atendimento: "bg-crm-warning",
-  qualificado: "bg-crm-purple",
   agendado: "bg-primary",
   compareceu: "bg-crm-success",
   fechou: "bg-crm-success",
-  sem_resposta: "bg-muted-foreground",
   lead_frio: "bg-sky-500",
   perdido: "bg-crm-danger",
 };

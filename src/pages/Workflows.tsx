@@ -59,7 +59,7 @@ const TEMPLATES: Template[] = [
     icon: Clock,
     description: "Cria follow-up após mudança de etapa.",
     triggerType: "stage_changed",
-    triggerConfig: { stage: "em_atendimento" },
+    triggerConfig: { stage: "hot_lead" },
     steps: [
       { delayMinutes: 1440, actionType: "create_task", message: "Realizar follow-up do lead" },
     ],
