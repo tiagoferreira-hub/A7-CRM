@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useTasks, Task } from "@/context/TasksContext";
 import { useLeads } from "@/context/LeadsContext";
 import { useAuth } from "@/context/AuthContext";
+import TaskEditModal from "@/components/TaskEditModal";
 import { Plus, Trash2, Check, Clock, AlertTriangle, Circle } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
