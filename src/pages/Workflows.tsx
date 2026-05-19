@@ -184,7 +184,11 @@ const Workflows: React.FC = () => {
             {flows.map(f => {
               const fSteps = flowSteps.filter(s => s.flowId === f.id);
               return (
-                <div key={f.id} className="border border-border rounded-lg p-4 bg-card">
+                <div
+                  key={f.id}
+                  onClick={() => setEditing(f)}
+                  className="border border-border rounded-lg p-4 bg-card cursor-pointer hover:bg-accent/30 transition-colors"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -197,7 +201,7 @@ const Workflows: React.FC = () => {
                         <span className={`text-[10px] px-2 py-0.5 rounded ${f.status === "ativo" ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>{FLOW_STATUS_LABELS[f.status]}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                       {f.status === "ativo" ? (
                         <button onClick={() => setFlowStatus(f.id, "pausado")} className="text-xs flex items-center gap-1 px-2 py-1 rounded-md border border-border hover:bg-accent">
                           <Pause className="w-3.5 h-3.5" /> Pausar
