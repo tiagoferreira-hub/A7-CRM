@@ -15,6 +15,7 @@ const Disparos: React.FC = () => {
   const [name, setName] = useState("");
   const [channel, setChannel] = useState<CampaignChannel>("whatsapp");
   const [date, setDate] = useState("");
+  const [editing, setEditing] = useState<Campaign | null>(null);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
