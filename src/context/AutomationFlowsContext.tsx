@@ -8,6 +8,7 @@ interface Ctx {
   steps: AutomationFlowStep[];
   loading: boolean;
   addFlow: (f: { name: string; triggerType: FlowTriggerType; triggerConfig?: any; steps?: Omit<AutomationFlowStep, "id" | "flowId">[] }) => Promise<AutomationFlow | null>;
+  updateFlow: (id: string, updates: { name?: string; triggerType?: FlowTriggerType; triggerConfig?: any; steps?: Omit<AutomationFlowStep, "id" | "flowId">[] }) => Promise<void>;
   setFlowStatus: (id: string, status: FlowStatus) => Promise<void>;
   deleteFlow: (id: string) => Promise<void>;
   reload: () => Promise<void>;
