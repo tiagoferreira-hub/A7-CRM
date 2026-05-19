@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useCampaigns } from "@/context/CampaignsContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CAMPAIGN_CHANNEL_LABELS, CAMPAIGN_STATUS_LABELS, CampaignChannel } from "@/types/automations";
+import CampaignEditModal from "@/components/CampaignEditModal";
+import { CAMPAIGN_CHANNEL_LABELS, CAMPAIGN_STATUS_LABELS, CampaignChannel, Campaign } from "@/types/automations";
 import { Send, Plus, Trash2, Pause, Play, Mail, MessageCircle } from "lucide-react";
 
 const fmt = (iso: string) => new Date(iso).toLocaleString("pt-BR", {
