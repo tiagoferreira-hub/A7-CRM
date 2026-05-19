@@ -59,9 +59,15 @@ const Tasks: React.FC = () => {
   const TaskItem = ({ task }: { task: Task }) => {
     const lead = leads.find(l => l.id === task.leadId);
     return (
-      <div className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group border border-border mb-1">
+      <div
+        onClick={() => setEditing(task)}
+        className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group border border-border mb-1 cursor-pointer"
+      >
         <div className="flex items-center gap-3 flex-1">
-          <button onClick={() => cycleStatus(task)} className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[task.status]}`}>
+          <button
+            onClick={(e) => { e.stopPropagation(); cycleStatus(task); }}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[task.status]}`}
+          >
             {STATUS_LABELS[task.status]}
           </button>
           <span className={`text-sm ${task.status === "done" ? "line-through text-muted-foreground" : "text-foreground"}`}>
@@ -75,7 +81,10 @@ const Tasks: React.FC = () => {
               {new Date(task.dueDate).toLocaleDateString("pt-BR")}
             </span>
           )}
-          <button onClick={() => deleteTask(task.id)} className="p-1 rounded hover:bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
+            className="p-1 rounded hover:bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+          >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
