@@ -28,7 +28,7 @@ const originColors: Record<string, string> = {
 };
 
 const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
-  const { updateLead } = useLeads();
+  const { updateLead, moveLead } = useLeads();
   const { services } = useServices();
   const { tagsForLead } = useTags();
   const members = useCompanyMembers();
