@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useAutomationFlows } from "@/context/AutomationFlowsContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import FlowEditModal from "@/components/FlowEditModal";
 import {
   FLOW_ACTION_LABELS, FLOW_STATUS_LABELS, FLOW_TRIGGER_LABELS,
-  FlowActionType, FlowTriggerType,
+  FlowActionType, FlowTriggerType, AutomationFlow,
 } from "@/types/automations";
 import { GitBranch, Plus, Trash2, Pause, Play, Workflow, Sparkles, Clock, UserPlus, MessageSquare, RotateCcw, Users } from "lucide-react";
 
