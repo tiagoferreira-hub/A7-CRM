@@ -93,6 +93,7 @@ const TEMPLATES: Template[] = [
 const Workflows: React.FC = () => {
   const { flows, steps: flowSteps, addFlow, setFlowStatus, deleteFlow } = useAutomationFlows();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<AutomationFlow | null>(null);
   const [name, setName] = useState("");
   const [trigger, setTrigger] = useState<FlowTriggerType>("no_reply_days");
   const [days, setDays] = useState(1);
