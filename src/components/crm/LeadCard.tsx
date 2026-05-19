@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Lead, ORIGIN_LABELS } from "@/types/lead";
+import { Lead, ORIGIN_LABELS, LeadStage } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
 import { useServices } from "@/context/ServicesContext";
 import { useTags } from "@/context/TagsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
+import StageDropdown from "./StageDropdown";
 import { Phone, MessageSquare, Pencil, Check, X, User } from "lucide-react";
 
 interface LeadCardProps {
