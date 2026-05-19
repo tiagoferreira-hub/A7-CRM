@@ -110,7 +110,6 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
     setEditing(true);
   };
 
-  const [saving, setSaving] = useState(false);
   const saveEdit = async () => {
     const val = typeof form.value === "string"
       ? parseFloat((form.value as string).replace(/[^\d.,]/g, "").replace(",", ".")) || 0
