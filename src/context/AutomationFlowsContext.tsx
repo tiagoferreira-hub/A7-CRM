@@ -70,6 +70,27 @@ export const AutomationFlowsProvider: React.FC<{ children: React.ReactNode }> = 
     return flow;
   }, [activeCompanyId, user]);
 
+  const updateFlow = useCallback(async (id: string, updates: any) => {
+    if (!activeCompanyId) return;
+    const dbUpdates: any = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.triggerType !== undefined) dbUpdates.trigger_type = updates.triggerType;
+    if (updates.triggerConfig !== undefined) dbUpdates.trigger_config = updates.triggerConfig;
+    if (Object.keys(dbUpdates).length) {
+      await (supabase as any).from("automation_flows").update(dbUpdates).eq("id", id).eq("company_id", activeCompanyId);
+      setFlows(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
+    }
+    if (updates.steps) {
+      await (supabase as any).from("automation_flow_steps").delete().eq("flow_id", id).eq("company_id", activeCompanyId);
+      const rows = updates.steps.map((x: any, i: number) => ({
+        flow_id: id, company_id: activeCompanyId, order_index: x.orderIndex ?? i,
+        delay_minutes: x.delayMinutes, action_type: x.actionType, action_config: x.actionConfig ?? {},
+      }));
+      const { data: sd } = await (supabase as any).from("automation_flow_steps").insert(rows).select();
+      setSteps(prev => [...prev.filter(s => s.flowId !== id), ...((sd ?? []).map(rowToStep))]);
+    }
+  }, [activeCompanyId]);
+
   const setFlowStatus = useCallback(async (id: string, status: FlowStatus) => {
     if (!activeCompanyId) return;
     await (supabase as any).from("automation_flows").update({ status }).eq("id", id).eq("company_id", activeCompanyId);
@@ -83,8 +104,8 @@ export const AutomationFlowsProvider: React.FC<{ children: React.ReactNode }> = 
     setSteps(prev => prev.filter(s => s.flowId !== id));
   }, [activeCompanyId]);
 
-  const value = useMemo(() => ({ flows, steps, loading, addFlow, setFlowStatus, deleteFlow, reload }),
-    [flows, steps, loading, addFlow, setFlowStatus, deleteFlow, reload]);
+  const value = useMemo(() => ({ flows, steps, loading, addFlow, updateFlow, setFlowStatus, deleteFlow, reload }),
+    [flows, steps, loading, addFlow, updateFlow, setFlowStatus, deleteFlow, reload]);
 
   return <FlowsContext.Provider value={value}>{children}</FlowsContext.Provider>;
 };
