@@ -313,6 +313,8 @@ const Workflows: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <FlowEditModal flow={editing} open={!!editing} onClose={() => setEditing(null)} />
     </div>
   );
 };
