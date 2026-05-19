@@ -46,8 +46,20 @@ export const CampaignsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const { data } = await (supabase as any).from("campaigns").insert({
       company_id: activeCompanyId,
       name: c.name, channel: c.channel, scheduled_at: c.scheduledAt ?? null, status: "agendado",
+      payload: c.payload ?? {},
     }).select().single();
     if (data) setCampaigns(prev => [rowTo(data), ...prev]);
+  }, [activeCompanyId]);
+
+  const updateCampaign = useCallback(async (id, updates) => {
+    if (!activeCompanyId) return;
+    const dbUpdates: any = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.channel !== undefined) dbUpdates.channel = updates.channel;
+    if (updates.scheduledAt !== undefined) dbUpdates.scheduled_at = updates.scheduledAt;
+    if (updates.payload !== undefined) dbUpdates.payload = updates.payload;
+    await (supabase as any).from("campaigns").update(dbUpdates).eq("id", id).eq("company_id", activeCompanyId);
+    setCampaigns(prev => prev.map(c => c.id === id ? { ...c, ...updates } as Campaign : c));
   }, [activeCompanyId]);
 
   const setCampaignStatus = useCallback(async (id, status) => {
@@ -62,5 +74,5 @@ export const CampaignsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setCampaigns(prev => prev.filter(c => c.id !== id));
   }, [activeCompanyId]);
 
-  return <CampaignsContext.Provider value={{ campaigns, loading, addCampaign, setCampaignStatus, deleteCampaign }}>{children}</CampaignsContext.Provider>;
+  return <CampaignsContext.Provider value={{ campaigns, loading, addCampaign, updateCampaign, setCampaignStatus, deleteCampaign }}>{children}</CampaignsContext.Provider>;
 };
