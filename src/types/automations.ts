@@ -22,6 +22,7 @@ export interface Campaign {
   scheduledAt: string | null;
   sentCount: number;
   repliedCount: number;
+  payload: { message?: string; recipients?: string } & Record<string, any>;
 }
 
 export const CAMPAIGN_CHANNEL_LABELS: Record<CampaignChannel, string> = {

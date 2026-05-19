@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useAutomationFlows } from "@/context/AutomationFlowsContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import FlowEditModal from "@/components/FlowEditModal";
 import {
   FLOW_ACTION_LABELS, FLOW_STATUS_LABELS, FLOW_TRIGGER_LABELS,
-  FlowActionType, FlowTriggerType,
+  FlowActionType, FlowTriggerType, AutomationFlow,
 } from "@/types/automations";
 import { GitBranch, Plus, Trash2, Pause, Play, Workflow, Sparkles, Clock, UserPlus, MessageSquare, RotateCcw, Users } from "lucide-react";
 
@@ -92,6 +93,7 @@ const TEMPLATES: Template[] = [
 const Workflows: React.FC = () => {
   const { flows, steps: flowSteps, addFlow, setFlowStatus, deleteFlow } = useAutomationFlows();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<AutomationFlow | null>(null);
   const [name, setName] = useState("");
   const [trigger, setTrigger] = useState<FlowTriggerType>("no_reply_days");
   const [days, setDays] = useState(1);
@@ -182,7 +184,11 @@ const Workflows: React.FC = () => {
             {flows.map(f => {
               const fSteps = flowSteps.filter(s => s.flowId === f.id);
               return (
-                <div key={f.id} className="border border-border rounded-lg p-4 bg-card">
+                <div
+                  key={f.id}
+                  onClick={() => setEditing(f)}
+                  className="border border-border rounded-lg p-4 bg-card cursor-pointer hover:bg-accent/30 transition-colors"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -195,7 +201,7 @@ const Workflows: React.FC = () => {
                         <span className={`text-[10px] px-2 py-0.5 rounded ${f.status === "ativo" ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>{FLOW_STATUS_LABELS[f.status]}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                       {f.status === "ativo" ? (
                         <button onClick={() => setFlowStatus(f.id, "pausado")} className="text-xs flex items-center gap-1 px-2 py-1 rounded-md border border-border hover:bg-accent">
                           <Pause className="w-3.5 h-3.5" /> Pausar
@@ -307,6 +313,8 @@ const Workflows: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <FlowEditModal flow={editing} open={!!editing} onClose={() => setEditing(null)} />
     </div>
   );
 };

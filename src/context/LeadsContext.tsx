@@ -112,7 +112,8 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if ((updates as any).assignedTo !== undefined) dbUpdates.assigned_to = (updates as any).assignedTo;
     if ((updates as any).lossReason !== undefined) dbUpdates.loss_reason = (updates as any).lossReason;
 
-    await supabase.from("leads").update(dbUpdates).eq("id", id).eq("company_id", activeCompanyId);
+    const { error } = await supabase.from("leads").update(dbUpdates).eq("id", id).eq("company_id", activeCompanyId);
+    if (error) throw error;
     setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
   }, [activeCompanyId]);
 

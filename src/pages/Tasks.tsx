@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useTasks, Task } from "@/context/TasksContext";
 import { useLeads } from "@/context/LeadsContext";
 import { useAuth } from "@/context/AuthContext";
+import TaskEditModal from "@/components/TaskEditModal";
 import { Plus, Trash2, Check, Clock, AlertTriangle, Circle } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -25,6 +26,7 @@ const Tasks: React.FC = () => {
   const [title, setTitle] = useState("");
   const [leadId, setLeadId] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [editing, setEditing] = useState<Task | null>(null);
 
   const handleAdd = async () => {
     if (!title.trim() || !user) return;
@@ -57,9 +59,15 @@ const Tasks: React.FC = () => {
   const TaskItem = ({ task }: { task: Task }) => {
     const lead = leads.find(l => l.id === task.leadId);
     return (
-      <div className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group border border-border mb-1">
+      <div
+        onClick={() => setEditing(task)}
+        className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-accent/50 transition-colors group border border-border mb-1 cursor-pointer"
+      >
         <div className="flex items-center gap-3 flex-1">
-          <button onClick={() => cycleStatus(task)} className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[task.status]}`}>
+          <button
+            onClick={(e) => { e.stopPropagation(); cycleStatus(task); }}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[task.status]}`}
+          >
             {STATUS_LABELS[task.status]}
           </button>
           <span className={`text-sm ${task.status === "done" ? "line-through text-muted-foreground" : "text-foreground"}`}>
@@ -73,7 +81,10 @@ const Tasks: React.FC = () => {
               {new Date(task.dueDate).toLocaleDateString("pt-BR")}
             </span>
           )}
-          <button onClick={() => deleteTask(task.id)} className="p-1 rounded hover:bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
+            className="p-1 rounded hover:bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+          >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -149,6 +160,8 @@ const Tasks: React.FC = () => {
       {tasks.length === 0 && !showForm && (
         <p className="text-sm text-muted-foreground text-center py-12">Nenhuma tarefa cadastrada</p>
       )}
+
+      <TaskEditModal task={editing} open={!!editing} onClose={() => setEditing(null)} />
     </div>
   );
 };
