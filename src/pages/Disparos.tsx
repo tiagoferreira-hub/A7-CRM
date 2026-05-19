@@ -52,7 +52,11 @@ const Disparos: React.FC = () => {
           </div>
         )}
         {campaigns.map(c => (
-          <div key={c.id} className="border border-border rounded-lg p-4 bg-card flex items-center justify-between">
+          <div
+            key={c.id}
+            onClick={() => setEditing(c)}
+            className="border border-border rounded-lg p-4 bg-card flex items-center justify-between cursor-pointer hover:bg-accent/30 transition-colors"
+          >
             <div>
               <div className="flex items-center gap-2">
                 {c.channel === "whatsapp" ? <MessageCircle className="w-4 h-4 text-emerald-600" /> : <Mail className="w-4 h-4 text-blue-600" />}
@@ -64,7 +68,7 @@ const Disparos: React.FC = () => {
                 {c.scheduledAt ? fmt(c.scheduledAt) : "Sem agendamento"} · Enviadas: {c.sentCount} · Respostas: {c.repliedCount}
               </p>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
               {c.status === "ativo" ? (
                 <button onClick={() => setCampaignStatus(c.id, "pausado")} className="text-xs flex items-center gap-1 px-2 py-1 rounded-md border border-border hover:bg-accent">
                   <Pause className="w-3.5 h-3.5" /> Pausar
