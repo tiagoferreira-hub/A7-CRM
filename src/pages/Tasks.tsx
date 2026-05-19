@@ -160,6 +160,8 @@ const Tasks: React.FC = () => {
       {tasks.length === 0 && !showForm && (
         <p className="text-sm text-muted-foreground text-center py-12">Nenhuma tarefa cadastrada</p>
       )}
+
+      <TaskEditModal task={editing} open={!!editing} onClose={() => setEditing(null)} />
     </div>
   );
 };
