@@ -117,6 +117,8 @@ const Disparos: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <CampaignEditModal campaign={editing} open={!!editing} onClose={() => setEditing(null)} />
     </div>
   );
 };
