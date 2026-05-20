@@ -9,6 +9,7 @@ import { useFollowUps } from "@/context/FollowUpsContext";
 import { useTasks } from "@/context/TasksContext";
 import { useLeadHistory } from "@/hooks/useLeadHistory";
 import { APPOINTMENT_TYPE_LABELS } from "@/types/appointment";
+import ServiceBadges from "@/components/crm/ServiceBadges";
 import { cn } from "@/lib/utils";
 
 export type RightPanelKey = "details" | "calls" | "attachments" | "activities";
@@ -166,8 +167,8 @@ const ConversationRightSidebar: React.FC<Props> = ({
                   <div className="text-foreground">{ORIGIN_LABELS[lead.origin]}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Serviço</div>
-                  <div className="text-foreground">{lead.service || "—"}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Serviços</div>
+                  <ServiceBadges value={lead.services ?? (lead.service ? [lead.service] : [])} readOnly size="xs" />
                 </div>
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Valor</div>
