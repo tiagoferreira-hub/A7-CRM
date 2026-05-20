@@ -406,7 +406,8 @@ const Conversations: React.FC = () => {
         </div>
       </aside>
 
-      {/* Chat panel */}
+      {/* Chat panel + right rail wrapper */}
+      <div className="flex-1 flex min-w-0 relative">
       <section className="flex-1 flex flex-col bg-muted/20 min-w-0">
         {!selected || !selectedLead ? (
           <div className="flex-1 flex items-center justify-center">
@@ -428,15 +429,12 @@ const Conversations: React.FC = () => {
                     <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" />{selectedLead.phone}</p>
                   </div>
                 </button>
-                {/* Lifecycle right next to name */}
-                <select
+                {/* Lifecycle stepper */}
+                <StageStepper
                   value={selectedLead.stage}
-                  onChange={e => updateLead(selectedLead.id, { stage: e.target.value as LeadStage })}
-                  className="text-[11px] px-2 py-1.5 rounded-md border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  title="Lifecycle"
-                >
-                  {STAGE_ORDER.map(s => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
-                </select>
+                  size="sm"
+                  onChange={s => updateLead(selectedLead.id, { stage: s })}
+                />
                 {/* Owner: admins edit, sellers read-only */}
                 {canEditOwner ? (
                   <select
@@ -468,6 +466,19 @@ const Conversations: React.FC = () => {
                   onClick={() => setApptOpen(true)}
                   className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90"
                 ><CalendarPlus className="w-3.5 h-3.5" /> Agendar</button>
+                {selected.status === "closed" ? (
+                  <button
+                    onClick={() => setConversationStatus(selected.id, "open")}
+                    className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md border border-crm-success/40 text-crm-success bg-crm-success-light hover:opacity-90"
+                    title="Reabrir conversa"
+                  ><CheckCircle2 className="w-3.5 h-3.5" /> Abrir</button>
+                ) : (
+                  <button
+                    onClick={() => setConversationStatus(selected.id, "closed")}
+                    className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-md border border-border text-foreground hover:bg-accent"
+                    title="Fechar conversa"
+                  ><Lock className="w-3.5 h-3.5" /> Fechar</button>
+                )}
               </div>
             </header>
 
