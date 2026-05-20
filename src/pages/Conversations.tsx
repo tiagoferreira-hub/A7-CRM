@@ -362,13 +362,13 @@ const Conversations: React.FC = () => {
               <button
                 key={c.id}
                 onClick={() => setSelectedId(c.id)}
-                className={`w-full text-left px-3 py-3 border-b border-border flex gap-3 items-start hover:bg-accent/60 transition-colors ${isActive ? "bg-accent" : ""}`}
+                  className={`w-full text-left px-3 py-3 border-b border-border flex gap-3 items-start hover:bg-accent/60 transition-colors ${isActive ? "bg-accent" : ""} ${c.status === "closed" ? "opacity-60" : ""}`}
               >
                 <div className="relative shrink-0">
                   <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center text-sm font-semibold ring-1 ring-border">
                     {lead.name.charAt(0).toUpperCase()}
                   </div>
-                  {isOnline && (
+                  {isOnline && c.status !== "closed" && (
                     <span className="absolute -bottom-0 -right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-card" title="Online" />
                   )}
                 </div>
