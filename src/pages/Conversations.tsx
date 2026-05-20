@@ -11,9 +11,11 @@ import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_TYPE_OPTIONS, AppointmentType } fr
 import {
   Search, Send, Phone, CheckSquare, CalendarPlus, Clock, Sparkles,
   Inbox, User, UserX, PhoneIncoming, Bot, Activity, Users, Star,
-  ChevronDown, ChevronRight, MessageCircle, Instagram,
+  ChevronDown, ChevronRight, MessageCircle, Instagram, Lock, CheckCircle2,
 } from "lucide-react";
 import LeadDetailModal from "@/components/crm/LeadDetailModal";
+import StageStepper from "@/components/crm/StageStepper";
+import ConversationRightSidebar, { RightPanelKey } from "@/components/crm/ConversationRightSidebar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type InboxKey = "all" | "mine" | "noowner" | "calls" | "unread" | "awaiting" | "pending_fup";
@@ -46,7 +48,7 @@ const channelIcon = (channel?: string) => {
 };
 
 const Conversations: React.FC = () => {
-  const { conversations, loadMessages, sendMessage, markRead, assignConversation } = useConversations();
+  const { conversations, loadMessages, sendMessage, markRead, assignConversation, setConversationStatus } = useConversations();
   const { leads, updateLead } = useLeads();
   const { user, role } = useAuth();
   const { addTask } = useTasks();
@@ -64,6 +66,7 @@ const Conversations: React.FC = () => {
   const [activeInbox, setActiveInbox] = useState<InboxKey>("all");
   const [activeStage, setActiveStage] = useState<LeadStage | null>(null);
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
+  const [rightPanel, setRightPanel] = useState<RightPanelKey | null>(null);
 
   const [expandedInbox, setExpandedInbox] = useState(true);
   const [expandedAI, setExpandedAI] = useState(true);
