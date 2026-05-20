@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { Lead, ORIGIN_LABELS, LeadStage } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
-import { useServices } from "@/context/ServicesContext";
 import { useTags } from "@/context/TagsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import StageStepper from "./StageStepper";
+import ServiceBadges from "./ServiceBadges";
 import { Phone, MessageSquare, Pencil, Check, X, User } from "lucide-react";
 
 interface LeadCardProps {
@@ -29,25 +29,25 @@ const originColors: Record<string, string> = {
 
 const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
   const { updateLead, moveLead } = useLeads();
-  const { services } = useServices();
   const { tagsForLead } = useTags();
   const members = useCompanyMembers();
   const assignee = lead.assignedTo ? members.find(m => m.userId === lead.assignedTo) : null;
   const leadTags = tagsForLead(lead.id);
+  const services = lead.services ?? (lead.service ? [lead.service] : []);
   const [editing, setEditing] = useState(false);
-  const [editService, setEditService] = useState(lead.service);
+  const [editServices, setEditServices] = useState<string[]>(services);
   const [editValue, setEditValue] = useState(lead.value.toString());
 
   const handleSave = () => {
     updateLead(lead.id, {
-      service: editService,
+      services: editServices,
       value: parseFloat(editValue.replace(/[^\d.,]/g, "").replace(",", ".")) || 0,
-    });
+    } as any);
     setEditing(false);
   };
 
   const handleCancel = () => {
-    setEditService(lead.service);
+    setEditServices(services);
     setEditValue(lead.value.toString());
     setEditing(false);
   };
@@ -109,16 +109,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
 
       {editing ? (
         <div className="space-y-2 mt-2" onClick={(e) => e.stopPropagation()}>
-          <select
-            className="w-full text-xs border border-input rounded-md px-2 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-            value={editService}
-            onChange={(e) => setEditService(e.target.value)}
-          >
-            <option value="">Selecione o serviço</option>
-            {services.map((s) => (
-              <option key={s.id} value={s.name}>{s.name}</option>
-            ))}
-          </select>
+          <ServiceBadges value={editServices} onChange={setEditServices} size="xs" />
           <input
             className="w-full text-xs border border-input rounded-md px-2 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
             value={editValue}
@@ -142,8 +133,12 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
         </div>
       ) : (
         <>
-          <div className="text-xs text-foreground font-medium truncate">{lead.service}</div>
-          <div className="text-base font-bold text-primary mt-0.5">
+          {services.length > 0 ? (
+            <ServiceBadges value={services} size="xs" readOnly />
+          ) : (
+            <div className="text-xs text-muted-foreground italic">Sem serviço</div>
+          )}
+          <div className="text-base font-bold text-primary mt-1">
             {formatCurrency(lead.value)}
           </div>
         </>

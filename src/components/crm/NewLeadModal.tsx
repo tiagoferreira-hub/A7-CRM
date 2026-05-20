@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { LeadOrigin, LeadStage, ORIGIN_LABELS, ORIGIN_OPTIONS, STAGE_LABELS, STAGE_ORDER } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
-import { useServices } from "@/context/ServicesContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ServiceBadges from "@/components/crm/ServiceBadges";
 
 interface Props {
   open: boolean;
@@ -11,12 +11,11 @@ interface Props {
 
 const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
   const { addLead } = useLeads();
-  const { services } = useServices();
   const [form, setForm] = useState({
     name: "",
     phone: "",
     origin: "manual" as LeadOrigin,
-    service: "",
+    services: [] as string[],
     value: "",
     lastMessage: "",
     observations: "",
@@ -31,20 +30,21 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
       phone: form.phone,
       origin: form.origin,
       stage: form.stage,
-      service: form.service,
+      service: form.services[0] ?? "",
+      services: form.services,
       value: parseFloat(form.value.replace(/[^\d.,]/g, "").replace(",", ".")) || 0,
       lastMessage: form.lastMessage,
       lastInteraction: new Date().toISOString(),
       observations: form.observations,
     });
     setForm({
-      name: "", phone: "", origin: "manual", service: "",
+      name: "", phone: "", origin: "manual", services: [],
       value: "", lastMessage: "", observations: "", stage: "lead_entrou",
     });
     onClose();
   };
 
-  const set = (field: string, value: string) => setForm({ ...form, [field]: value });
+  const set = (field: string, value: any) => setForm({ ...form, [field]: value });
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
@@ -74,11 +74,8 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Serviço de interesse</label>
-            <select className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.service} onChange={(e) => set("service", e.target.value)}>
-              <option value="">Selecione o serviço</option>
-              {services.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
-            </select>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Serviços de interesse</label>
+            <ServiceBadges value={form.services} onChange={(v) => set("services", v)} />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Valor (R$)</label>
@@ -107,3 +104,4 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
 };
 
 export default NewLeadModal;
+

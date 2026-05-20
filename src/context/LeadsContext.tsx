@@ -28,6 +28,7 @@ const rowToLead = (row: any): Lead => ({
   origin: row.origin,
   stage: row.stage,
   service: row.service,
+  services: Array.isArray(row.services) ? row.services : (row.service ? [row.service] : []),
   value: Number(row.value),
   lastMessage: row.last_message,
   lastInteraction: row.last_interaction,
@@ -73,6 +74,7 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Dedupe by phone within company
     const existing = leads.find(l => normalizePhone(l.phone) === normalizePhone(lead.phone));
     if (existing) return existing;
+    const servicesArr = (lead.services && lead.services.length) ? lead.services : (lead.service ? [lead.service] : []);
     const { data } = await supabase
       .from("leads")
       .insert({
@@ -81,12 +83,13 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         phone: lead.phone,
         origin: lead.origin,
         stage: lead.stage,
-        service: lead.service,
+        service: servicesArr[0] ?? "",
+        services: servicesArr,
         value: lead.value,
         last_message: lead.lastMessage,
         last_interaction: lead.lastInteraction,
         observations: lead.observations,
-      })
+      } as any)
       .select()
       .single();
     if (data) {
@@ -105,6 +108,11 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (updates.origin !== undefined) dbUpdates.origin = updates.origin;
     if (updates.stage !== undefined) dbUpdates.stage = updates.stage;
     if (updates.service !== undefined) dbUpdates.service = updates.service;
+    if ((updates as any).services !== undefined) {
+      const arr = (updates as any).services as string[];
+      dbUpdates.services = arr;
+      dbUpdates.service = arr[0] ?? "";
+    }
     if (updates.value !== undefined) dbUpdates.value = updates.value;
     if (updates.lastMessage !== undefined) dbUpdates.last_message = updates.lastMessage;
     if (updates.lastInteraction !== undefined) dbUpdates.last_interaction = updates.lastInteraction;

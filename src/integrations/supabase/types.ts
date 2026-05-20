@@ -477,6 +477,7 @@ export type Database = {
           origin: string
           phone: string
           service: string
+          services: string[]
           stage: string
           updated_at: string
           value: number
@@ -498,6 +499,7 @@ export type Database = {
           origin?: string
           phone: string
           service?: string
+          services?: string[]
           stage?: string
           updated_at?: string
           value?: number
@@ -519,6 +521,7 @@ export type Database = {
           origin?: string
           phone?: string
           service?: string
+          services?: string[]
           stage?: string
           updated_at?: string
           value?: number
