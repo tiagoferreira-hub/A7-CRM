@@ -13,6 +13,7 @@ export interface Conversation {
   unreadCount: number;
   awaitingReply: boolean;
   isUnread: boolean;
+  status: "open" | "closed";
   createdAt: string;
 }
 
@@ -33,6 +34,7 @@ interface ConversationsContextType {
   setAwaitingReply: (conversationId: string, value: boolean) => Promise<void>;
   markUnread: (conversationId: string, value: boolean) => Promise<void>;
   assignConversation: (conversationId: string, leadId: string, userId: string | null) => Promise<void>;
+  setConversationStatus: (conversationId: string, status: "open" | "closed") => Promise<void>;
   reload: () => Promise<void>;
 }
 
@@ -55,6 +57,7 @@ const rowToConv = (r: any): Conversation => ({
   unreadCount: r.unread_count,
   awaitingReply: r.awaiting_reply ?? false,
   isUnread: r.is_unread ?? false,
+  status: (r.status as "open" | "closed") ?? "open",
   createdAt: r.created_at,
 });
 
@@ -167,8 +170,16 @@ export const ConversationsProvider: React.FC<{ children: React.ReactNode }> = ({
     setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, assignedTo: userId } : c));
   }, [activeCompanyId]);
 
+  const setConversationStatus = useCallback(async (conversationId: string, status: "open" | "closed") => {
+    if (!activeCompanyId) return;
+    await (supabase as any).from("conversations")
+      .update({ status })
+      .eq("id", conversationId).eq("company_id", activeCompanyId);
+    setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, status } : c));
+  }, [activeCompanyId]);
+
   return (
-    <ConversationsContext.Provider value={{ conversations, loading, loadMessages, sendMessage, markRead, setAwaitingReply, markUnread, assignConversation, reload }}>
+    <ConversationsContext.Provider value={{ conversations, loading, loadMessages, sendMessage, markRead, setAwaitingReply, markUnread, assignConversation, setConversationStatus, reload }}>
       {children}
     </ConversationsContext.Provider>
   );
