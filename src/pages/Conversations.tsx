@@ -567,6 +567,15 @@ const Conversations: React.FC = () => {
           </>
         )}
       </section>
+        <ConversationRightSidebar
+          lead={selectedLead}
+          conversation={selected}
+          messages={messages}
+          activePanel={rightPanel}
+          onSelectPanel={setRightPanel}
+          onOpenLifecycle={() => { setRightPanel(null); setOpenLeadId(selectedLead?.id ?? null); }}
+        />
+      </div>
 
       <LeadDetailModal
         lead={openLeadId ? leadById[openLeadId] ?? null : null}
