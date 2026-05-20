@@ -12,6 +12,8 @@ import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_STATUS_LABELS } from "@/types/appo
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LossReasonModal from "./LossReasonModal";
 import StageStepper from "./StageStepper";
+import ServiceBadges from "./ServiceBadges";
+import { useConversations } from "@/context/ConversationsContext";
 import {
   Phone, Plus, X as XIcon, MessageCircle, Instagram, Megaphone, Hand,
   Search as SearchIcon, Sparkles, MessageSquare, CalendarPlus, ListTodo,
@@ -73,6 +75,7 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const { appointments } = useAppointments();
   const { followUps, addFollowUp } = useFollowUps();
   const { tags, createTag, assignTag, unassignTag, tagsForLead } = useTags();
+  const { conversations } = useConversations();
   const members = useCompanyMembers();
   const history = useLeadHistory(lead?.id);
   const [editing, setEditing] = useState(false);
@@ -164,8 +167,10 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
 
   const origBadge = originBadge(lead.origin);
   const OriginIcon = origBadge.icon;
+  const leadConv = conversations.find(c => c.leadId === lead.id);
+  const isConvClosed = leadConv?.status === "closed";
   const daysNoResp = daysSince(lead.lastInteraction);
-  const noRespAlert = daysNoResp > 2;
+  const noRespAlert = daysNoResp > 2 && !isConvClosed;
 
   return (
     <>
@@ -237,9 +242,9 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                       </div>
                       <div className="flex items-start gap-2.5">
                         <Briefcase className="w-4 h-4 text-muted-foreground mt-0.5" />
-                        <div>
-                          <div className="text-[11px] text-muted-foreground">Serviço de interesse</div>
-                          <div className="text-sm text-foreground">{lead.service || "—"}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] text-muted-foreground mb-1">Serviços de interesse</div>
+                          <ServiceBadges value={lead.services ?? (lead.service ? [lead.service] : [])} readOnly size="xs" />
                         </div>
                       </div>
                       <div className="flex items-start gap-2.5">
@@ -401,14 +406,12 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                         {ORIGIN_OPTIONS.map((o) => <option key={o} value={o}>{ORIGIN_LABELS[o]}</option>)}
                       </select>
                     </div>
-                    <div>
-                      <label className="text-xs font-medium text-foreground mb-1.5 block">Serviço de interesse</label>
-                      <select value={form.service ?? lead.service}
-                        onChange={(e) => setForm({ ...form, service: e.target.value })}
-                        className="w-full h-10 text-sm border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring">
-                        <option value="">Selecione o serviço</option>
-                        {services.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
-                      </select>
+                    <div className="col-span-2">
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">Serviços de interesse</label>
+                      <ServiceBadges
+                        value={(form.services as string[]) ?? lead.services ?? (lead.service ? [lead.service] : [])}
+                        onChange={(v) => setForm({ ...form, services: v } as any)}
+                      />
                     </div>
                     <div>
                       <label className="text-xs font-medium text-foreground mb-1.5 block">Valor (R$)</label>
