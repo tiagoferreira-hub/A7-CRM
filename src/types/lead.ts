@@ -24,7 +24,7 @@ export interface Lead {
   origin: LeadOrigin;
   stage: LeadStage;
   service: string;
-  services: string[];
+  services?: string[];
   value: number;
   lastMessage: string;
   lastInteraction: string;
