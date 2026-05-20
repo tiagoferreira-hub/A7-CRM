@@ -11,7 +11,7 @@ import { useLeadHistory } from "@/hooks/useLeadHistory";
 import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_STATUS_LABELS } from "@/types/appointment";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LossReasonModal from "./LossReasonModal";
-import StageDropdown from "./StageDropdown";
+import StageStepper from "./StageStepper";
 import {
   Phone, Plus, X as XIcon, MessageCircle, Instagram, Megaphone, Hand,
   Search as SearchIcon, Sparkles, MessageSquare, CalendarPlus, ListTodo,
@@ -194,7 +194,7 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap pt-1">
-                  <StageDropdown value={lead.stage} onChange={handleStageChange} />
+                  <StageStepper value={lead.stage} onChange={handleStageChange} />
                   <select
                     className="text-sm h-10 border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
                     value={lead.assignedTo ?? ""}

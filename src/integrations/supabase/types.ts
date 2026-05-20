@@ -212,6 +212,7 @@ export type Database = {
           last_message: string
           last_message_at: string
           lead_id: string
+          status: string
           unread_count: number
           updated_at: string
         }
@@ -227,6 +228,7 @@ export type Database = {
           last_message?: string
           last_message_at?: string
           lead_id: string
+          status?: string
           unread_count?: number
           updated_at?: string
         }
@@ -242,6 +244,7 @@ export type Database = {
           last_message?: string
           last_message_at?: string
           lead_id?: string
+          status?: string
           unread_count?: number
           updated_at?: string
         }
