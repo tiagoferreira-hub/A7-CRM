@@ -16,11 +16,10 @@ const Index: React.FC = () => {
   const { role } = useAuth();
   const isSeller = role === "seller";
   const [tab, setTab] = useState<AppTab>(isSeller ? "home" : "lifecycle");
-  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen bg-background w-full">
-      <AppSidebar tab={tab} setTab={setTab} collapsed={collapsed} setCollapsed={setCollapsed} />
+      <AppSidebar tab={tab} setTab={setTab} />
       <main className="flex-1 overflow-hidden">
         {tab === "home" && isSeller && <SellerDashboard />}
         {tab === "lifecycle" && <KanbanBoard />}
