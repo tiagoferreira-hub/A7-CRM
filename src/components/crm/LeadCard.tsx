@@ -4,7 +4,7 @@ import { useLeads } from "@/context/LeadsContext";
 import { useServices } from "@/context/ServicesContext";
 import { useTags } from "@/context/TagsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
-import StageDropdown from "./StageDropdown";
+import StageStepper from "./StageStepper";
 import { Phone, MessageSquare, Pencil, Check, X, User } from "lucide-react";
 
 interface LeadCardProps {
@@ -79,11 +79,11 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
       </div>
 
       <div className="mb-2" onClick={(e) => e.stopPropagation()}>
-        <StageDropdown
+        <StageStepper
           value={lead.stage}
           size="sm"
           onChange={(s) => moveLead(lead.id, s)}
-          className="w-full justify-between"
+          className="w-full"
         />
       </div>
 
