@@ -121,7 +121,7 @@ const Conversations: React.FC = () => {
   }, [conversations, leadById, user, leadsWithPendingFup]);
 
   const filtered = useMemo(() => {
-    return conversations.filter(c => {
+    const list = conversations.filter(c => {
       const lead = leadById[c.leadId];
       if (!lead) return false;
       // inbox filter
@@ -143,6 +143,13 @@ const Conversations: React.FC = () => {
         if (!matchesName && !matchesPhone) return false;
       }
       return true;
+    });
+    // Sort: open first, then closed below
+    return [...list].sort((a, b) => {
+      const aClosed = a.status === "closed" ? 1 : 0;
+      const bClosed = b.status === "closed" ? 1 : 0;
+      if (aClosed !== bClosed) return aClosed - bClosed;
+      return b.lastMessageAt.localeCompare(a.lastMessageAt);
     });
   }, [conversations, leadById, search, activeInbox, activeStage, leadsWithPendingFup, user]);
 
