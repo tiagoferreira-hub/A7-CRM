@@ -266,6 +266,61 @@ const ConversationRightSidebar: React.FC<Props> = ({
                 )}
               </div>
             )}
+
+            {activePanel === "script" && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Script</label>
+                  <select
+                    value={activeScript?.id ?? ""}
+                    onChange={e => setScriptOverrideId(e.target.value || null)}
+                    className="w-full text-xs border border-input rounded-md px-2 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="">— Ativo da etapa —</option>
+                    {scripts.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} {s.isActive ? "•" : ""} ({STAGE_LABELS[s.stage]})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {!activeScript ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-xs">Nenhum script ativo para esta etapa</p>
+                    <button
+                      onClick={() => window.dispatchEvent(new CustomEvent("crm:navigate", { detail: { tab: "playbooks" } }))}
+                      className="text-[11px] text-primary hover:underline mt-2"
+                    >
+                      Criar em Playbooks → Scripts
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">{activeScript.name}</p>
+                    {scriptBlocks.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Script sem conteúdo.</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {scriptBlocks.map((block, i) => (
+                          <li key={i} className="bg-muted/40 border border-border rounded-md p-2 group">
+                            <p className="text-xs text-foreground whitespace-pre-wrap">{block}</p>
+                            <button
+                              onClick={() => handleUseBlock(block)}
+                              className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                            >
+                              <Copy className="w-3 h-3" /> Usar
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
           {activePanel === "details" && (
             <div className="border-t border-border p-3">
