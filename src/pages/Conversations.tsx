@@ -192,6 +192,17 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
     }
   }, [pendingLeadId, conversations, onPendingHandled]);
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ text: string }>;
+      if (!ce.detail?.text) return;
+      setInput(prev => prev ? prev + (prev.endsWith("\n") ? "" : "\n") + ce.detail.text : ce.detail.text);
+    };
+    window.addEventListener("crm:scriptInsert", handler);
+    return () => window.removeEventListener("crm:scriptInsert", handler);
+  }, []);
+
+
   const handleSend = async () => {
     if (!selectedId || !input.trim()) return;
     const msg = await sendMessage(selectedId, input);
