@@ -14,6 +14,8 @@ import { FollowUpsProvider } from "@/context/FollowUpsContext";
 import { CampaignsProvider } from "@/context/CampaignsContext";
 import { TagsProvider } from "@/context/TagsContext";
 import { AutomationFlowsProvider } from "@/context/AutomationFlowsContext";
+import { PlaybooksProvider } from "@/context/PlaybooksContext";
+
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Landing from "./pages/Landing";
