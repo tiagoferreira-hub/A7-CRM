@@ -2,8 +2,9 @@ import React from "react";
 import {
   Workflow, MessageSquare, Users, Calendar, CheckSquare, Send,
   GitBranch, BarChart3, Settings as SettingsIcon, LogOut, ArrowLeft, Home,
-  Sun, Moon,
+  Sun, Moon, BookOpen,
 } from "lucide-react";
+
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import Logo from "@/components/Logo";
