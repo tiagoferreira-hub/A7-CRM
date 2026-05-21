@@ -173,8 +173,9 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const leadConv = conversations.find(c => c.leadId === lead.id);
   const isConvClosed = leadConv?.status === "closed";
   const isAwaitingLead = !!leadConv?.awaitingReply && !isConvClosed;
-  const daysNoResp = daysSince(lead.lastInteraction);
-  const noRespAlert = daysNoResp > 2 && isAwaitingLead;
+  const waiting = useWaitingTime(isAwaitingLead ? (leadConv?.lastMessageAt ?? lead.lastInteraction) : null);
+  const waitTier = waiting ? waitingTierClasses[waiting.tier] : waitingTierClasses.fresh;
+  const noRespAlert = !!waiting && (waiting.tier === "warning" || waiting.tier === "danger");
 
   return (
     <>
