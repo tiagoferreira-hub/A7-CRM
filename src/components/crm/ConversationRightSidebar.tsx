@@ -39,6 +39,15 @@ const ConversationRightSidebar: React.FC<Props> = ({
   const members = useCompanyMembers();
   const { tagsForLead } = useTags();
   const history = useLeadHistory(lead?.id);
+  const { scripts, recordUsage } = usePlaybooks();
+  const [scriptOverrideId, setScriptOverrideId] = useState<string | null>(null);
+
+  const activeScript = useMemo(() => {
+    if (!lead) return null;
+    if (scriptOverrideId) return scripts.find(s => s.id === scriptOverrideId) ?? null;
+    return scripts.find(s => s.stage === lead.stage && s.isActive) ?? null;
+  }, [lead, scripts, scriptOverrideId]);
+
 
   const owner = lead?.assignedTo ? members.find(m => m.userId === lead.assignedTo) : null;
   const leadTags = lead ? tagsForLead(lead.id) : [];
