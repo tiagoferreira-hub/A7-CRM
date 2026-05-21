@@ -348,12 +348,18 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                       <p className="text-sm text-muted-foreground">Sem eventos.</p>
                     ) : (
                       <ul className="space-y-1.5 max-h-40 overflow-y-auto">
-                        {history.map(e => (
-                          <li key={e.id} className="text-xs text-foreground flex items-start justify-between gap-2 border-l-2 border-border pl-2.5 py-0.5">
-                            <span>{eventLabel(e)}</span>
-                            <span className="text-muted-foreground shrink-0">{formatDateTime(e.createdAt)}</span>
-                          </li>
-                        ))}
+                        {history.map(e => {
+                          const actor = members.find(m => m.userId === e.actorId);
+                          return (
+                            <li key={e.id} className="text-xs text-foreground flex items-start justify-between gap-2 border-l-2 border-border pl-2.5 py-0.5">
+                              <span>
+                                {eventLabel(e)}
+                                {actor && <span className="text-muted-foreground"> · {actor.displayName}</span>}
+                              </span>
+                              <span className="text-muted-foreground shrink-0">{formatDateTime(e.createdAt)}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
                   </div>
