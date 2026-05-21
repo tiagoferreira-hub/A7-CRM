@@ -57,7 +57,9 @@ const Index: React.FC = () => {
         {tab === "tasks" && <Tasks />}
         {tab === "disparos" && <Disparos />}
         {tab === "workflows" && <Workflows />}
+        {tab === "playbooks" && <Playbooks />}
         {tab === "reports" && <Reports />}
+
         {tab === "settings" && <Settings />}
       </main>
     </div>
