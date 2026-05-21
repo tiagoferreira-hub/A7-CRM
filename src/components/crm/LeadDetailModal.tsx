@@ -14,6 +14,7 @@ import LossReasonModal from "./LossReasonModal";
 import StageStepper from "./StageStepper";
 import ServiceBadges from "./ServiceBadges";
 import { useConversations } from "@/context/ConversationsContext";
+import { useWaitingTime, waitingTierClasses } from "@/hooks/useWaitingTime";
 import {
   Phone, Plus, X as XIcon, MessageCircle, Instagram, Megaphone, Hand,
   Search as SearchIcon, Sparkles, MessageSquare, CalendarPlus, ListTodo,
