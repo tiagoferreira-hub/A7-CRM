@@ -27,9 +27,18 @@ const Index: React.FC = () => {
       setPendingLeadId(ce.detail.leadId);
       setTab("conversations");
     };
+    const navHandler = (e: Event) => {
+      const ce = e as CustomEvent<{ tab: AppTab }>;
+      if (ce.detail?.tab) setTab(ce.detail.tab);
+    };
     window.addEventListener("crm:openConversationByLead", handler);
-    return () => window.removeEventListener("crm:openConversationByLead", handler);
+    window.addEventListener("crm:navigate", navHandler);
+    return () => {
+      window.removeEventListener("crm:openConversationByLead", handler);
+      window.removeEventListener("crm:navigate", navHandler);
+    };
   }, []);
+
 
   return (
     <div className="flex h-screen bg-background w-full">
