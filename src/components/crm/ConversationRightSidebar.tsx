@@ -88,7 +88,21 @@ const ConversationRightSidebar: React.FC<Props> = ({
     { key: "calls", icon: Phone, label: "Chamadas" },
     { key: "attachments", icon: Paperclip, label: "Anexos" },
     { key: "activities", icon: Clock, label: "Atividades" },
+    { key: "script", icon: BookOpen, label: "Script" },
   ];
+
+  const scriptBlocks = useMemo(
+    () => (activeScript?.content ?? "").split(/\n{2,}/).map(b => b.trim()).filter(Boolean),
+    [activeScript]
+  );
+
+  const handleUseBlock = (text: string) => {
+    window.dispatchEvent(new CustomEvent("crm:scriptInsert", { detail: { text } }));
+    if (activeScript && conversation && lead) {
+      recordUsage(activeScript.id, conversation.id, lead.id, lead.stage);
+    }
+  };
+
 
   const handleClick = (k: RightPanelKey) => {
     onSelectPanel(activePanel === k ? null : k);
