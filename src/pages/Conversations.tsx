@@ -59,7 +59,12 @@ const channelIcon = (channel?: string) => {
   return <MessageCircle className="w-3 h-3" />;
 };
 
-const Conversations: React.FC = () => {
+interface ConversationsProps {
+  pendingLeadId?: string | null;
+  onPendingHandled?: () => void;
+}
+
+const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingHandled }) => {
   const { conversations, loadMessages, sendMessage, markRead, assignConversation, setConversationStatus } = useConversations();
   const { leads, updateLead } = useLeads();
   const { user, role } = useAuth();
@@ -173,6 +178,19 @@ const Conversations: React.FC = () => {
     loadMessages(selectedId).then(setMessages);
     markRead(selectedId);
   }, [selectedId, loadMessages, markRead]);
+
+  useEffect(() => {
+    if (!pendingLeadId) return;
+    const conv = conversations
+      .filter(c => c.leadId === pendingLeadId)
+      .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt))[0];
+    if (conv) {
+      setActiveInbox("all");
+      setActiveStage(null);
+      setSelectedId(conv.id);
+      onPendingHandled?.();
+    }
+  }, [pendingLeadId, conversations, onPendingHandled]);
 
   const handleSend = async () => {
     if (!selectedId || !input.trim()) return;
