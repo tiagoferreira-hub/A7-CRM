@@ -106,6 +106,11 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const leadTags = lead ? tagsForLead(lead.id) : [];
   const leadTagIds = new Set(leadTags.map(t => t.id));
 
+  const leadConv = lead ? conversations.find(c => c.leadId === lead.id) : undefined;
+  const isConvClosed = leadConv?.status === "closed";
+  const isAwaitingLead = !!leadConv?.awaitingReply && !isConvClosed;
+  const waiting = useWaitingTime(isAwaitingLead ? (leadConv?.lastMessageAt ?? lead?.lastInteraction ?? null) : null);
+
   if (!lead) return null;
 
   const startEdit = () => {
