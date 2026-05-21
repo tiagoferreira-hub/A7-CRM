@@ -106,6 +106,11 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const leadTags = lead ? tagsForLead(lead.id) : [];
   const leadTagIds = new Set(leadTags.map(t => t.id));
 
+  const leadConv = lead ? conversations.find(c => c.leadId === lead.id) : undefined;
+  const isConvClosed = leadConv?.status === "closed";
+  const isAwaitingLead = !!leadConv?.awaitingReply && !isConvClosed;
+  const waiting = useWaitingTime(isAwaitingLead ? (leadConv?.lastMessageAt ?? lead?.lastInteraction ?? null) : null);
+
   if (!lead) return null;
 
   const startEdit = () => {
@@ -168,12 +173,9 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
     setNewTag("");
   };
 
-  const origBadge = originBadge(lead.origin);
-  const OriginIcon = origBadge.icon;
-  const leadConv = conversations.find(c => c.leadId === lead.id);
-  const isConvClosed = leadConv?.status === "closed";
-  const isAwaitingLead = !!leadConv?.awaitingReply && !isConvClosed;
-  const waiting = useWaitingTime(isAwaitingLead ? (leadConv?.lastMessageAt ?? lead.lastInteraction) : null);
+  const origBadge_ = originBadge(lead.origin);
+  const OriginIcon = origBadge_.icon;
+  const origBadge = origBadge_;
   const waitTier = waiting ? waitingTierClasses[waiting.tier] : waitingTierClasses.fresh;
   const noRespAlert = !!waiting && (waiting.tier === "warning" || waiting.tier === "danger");
 
