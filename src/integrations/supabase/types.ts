@@ -199,6 +199,42 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_metrics: {
+        Row: {
+          avg_agent_response_time: number
+          avg_lead_response_time: number
+          company_id: string
+          conversation_id: string
+          created_at: string
+          first_response_time: number | null
+          id: string
+          total_messages: number
+          updated_at: string
+        }
+        Insert: {
+          avg_agent_response_time?: number
+          avg_lead_response_time?: number
+          company_id: string
+          conversation_id: string
+          created_at?: string
+          first_response_time?: number | null
+          id?: string
+          total_messages?: number
+          updated_at?: string
+        }
+        Update: {
+          avg_agent_response_time?: number
+          avg_lead_response_time?: number
+          company_id?: string
+          conversation_id?: string
+          created_at?: string
+          first_response_time?: number | null
+          id?: string
+          total_messages?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           assigned_to: string | null
@@ -544,6 +580,8 @@ export type Database = {
           created_at: string
           direction: string
           id: string
+          response_time_minutes: number | null
+          sender_type: string | null
           sent_at: string
         }
         Insert: {
@@ -553,6 +591,8 @@ export type Database = {
           created_at?: string
           direction?: string
           id?: string
+          response_time_minutes?: number | null
+          sender_type?: string | null
           sent_at?: string
         }
         Update: {
@@ -562,6 +602,8 @@ export type Database = {
           created_at?: string
           direction?: string
           id?: string
+          response_time_minutes?: number | null
+          sender_type?: string | null
           sent_at?: string
         }
         Relationships: [
@@ -587,6 +629,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          theme: string
           updated_at: string
           user_id: string
         }
@@ -595,6 +638,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          theme?: string
           updated_at?: string
           user_id: string
         }
@@ -603,6 +647,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          theme?: string
           updated_at?: string
           user_id?: string
         }
