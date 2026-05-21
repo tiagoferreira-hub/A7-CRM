@@ -56,55 +56,21 @@ const ConversationRightSidebar: React.FC<Props> = ({
     return { images, docs, links };
   }, [messages]);
 
-  const activities = useMemo(() => {
-    if (!lead) return [];
-    type Ev = { id: string; ts: string; type: string; label: string; color: string };
-    const ev: Ev[] = [];
-    history.forEach(h => {
-      if (h.eventType === "stage_changed") {
-        ev.push({
-          id: h.id, ts: h.createdAt, type: "stage",
-          label: `Etapa: ${STAGE_LABELS[(h.payload as any)?.from] ?? "—"} → ${STAGE_LABELS[(h.payload as any)?.to] ?? "—"}`,
-          color: "bg-crm-info-light text-crm-info",
-        });
-      } else if (h.eventType === "created") {
-        ev.push({ id: h.id, ts: h.createdAt, type: "created", label: "Lead criado", color: "bg-muted text-muted-foreground" });
-      }
-    });
-    appointments.filter(a => a.leadId === lead.id).forEach(a => {
-      ev.push({
-        id: `appt-${a.id}`, ts: a.scheduledAt, type: "appointment",
-        label: `Agendamento: ${APPOINTMENT_TYPE_LABELS[a.type]}`,
-        color: "bg-crm-purple-light text-crm-purple",
-      });
-    });
-    followUps.filter(f => f.leadId === lead.id).forEach(f => {
-      ev.push({
-        id: `fup-${f.id}`, ts: f.scheduledAt, type: "followup",
-        label: `Follow-up ${f.status === "concluido" ? "concluído" : "agendado"}`,
-        color: "bg-crm-warning-light text-crm-warning",
-      });
-    });
-    tasks.filter(t => t.leadId === lead.id).forEach(t => {
-      ev.push({
-        id: `task-${t.id}`, ts: t.dueDate ?? new Date().toISOString(), type: "task",
-        label: `Tarefa: ${t.title}`,
-        color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
-      });
-    });
-    if (conversation) {
-      ev.push({
-        id: `conv-${conversation.id}-${conversation.status}`,
-        ts: conversation.lastMessageAt,
-        type: "conversation",
-        label: conversation.status === "closed" ? "Conversa fechada" : "Conversa aberta",
-        color: conversation.status === "closed"
-          ? "bg-muted text-muted-foreground"
-          : "bg-crm-success-light text-crm-success",
-      });
+  const eventLabel = (e: { eventType: string; payload: any }) => {
+    switch (e.eventType) {
+      case "created": return "Lead criado";
+      case "stage_changed": return `${STAGE_LABELS[e.payload?.from as LeadStage] ?? e.payload?.from} → ${STAGE_LABELS[e.payload?.to as LeadStage] ?? e.payload?.to}`;
+      case "assignee_changed": return "Responsável alterado";
+      case "followup_created": return "Follow-up criado";
+      case "followup_completed": return "Follow-up concluído";
+      case "lost_reason": return `Motivo de perda: ${e.payload?.reason ?? "—"}`;
+      case "appointment_created": return `Agendamento (${e.payload?.type ?? ""})`;
+      case "conversation_opened": return "Conversa aberta";
+      case "conversation_closed": return "Conversa fechada";
+      default: return e.eventType;
     }
-    return ev.sort((a, b) => b.ts.localeCompare(a.ts));
-  }, [lead, history, appointments, followUps, tasks, conversation]);
+  };
+
 
   const icons: { key: RightPanelKey; icon: any; label: string }[] = [
     { key: "details", icon: UserRound, label: "Detalhes" },
