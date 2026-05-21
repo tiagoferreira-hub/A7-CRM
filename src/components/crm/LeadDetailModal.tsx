@@ -58,6 +58,8 @@ const eventLabel = (e: { eventType: string; payload: any }) => {
     case "followup_completed": return "Follow-up concluído";
     case "lost_reason": return `Motivo de perda: ${e.payload?.reason ?? "—"}`;
     case "appointment_created": return `Agendamento (${e.payload?.type ?? ""})`;
+    case "conversation_opened": return "Conversa aberta";
+    case "conversation_closed": return "Conversa fechada";
     default: return e.eventType;
   }
 };
@@ -169,8 +171,9 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const OriginIcon = origBadge.icon;
   const leadConv = conversations.find(c => c.leadId === lead.id);
   const isConvClosed = leadConv?.status === "closed";
+  const isAwaitingLead = !!leadConv?.awaitingReply && !isConvClosed;
   const daysNoResp = daysSince(lead.lastInteraction);
-  const noRespAlert = daysNoResp > 2 && !isConvClosed;
+  const noRespAlert = daysNoResp > 2 && isAwaitingLead;
 
   return (
     <>
@@ -306,7 +309,9 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                           <div className={`font-medium ${noRespAlert ? "text-crm-warning" : "text-foreground"}`}>
                             {isConvClosed
                               ? "Conversa fechada"
-                              : daysNoResp === 0 ? "Sem mensagens hoje" : `${daysNoResp} ${daysNoResp === 1 ? "dia" : "dias"} sem resposta`}
+                              : isAwaitingLead
+                                ? (daysNoResp === 0 ? "Aguardando lead" : `${daysNoResp} ${daysNoResp === 1 ? "dia" : "dias"} sem resposta`)
+                                : "Aguardando seu retorno"}
                           </div>
                           <div className="text-[11px] text-muted-foreground">Última: {formatDateTime(lead.lastInteraction)}</div>
                         </div>
@@ -346,12 +351,18 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                       <p className="text-sm text-muted-foreground">Sem eventos.</p>
                     ) : (
                       <ul className="space-y-1.5 max-h-40 overflow-y-auto">
-                        {history.map(e => (
-                          <li key={e.id} className="text-xs text-foreground flex items-start justify-between gap-2 border-l-2 border-border pl-2.5 py-0.5">
-                            <span>{eventLabel(e)}</span>
-                            <span className="text-muted-foreground shrink-0">{formatDateTime(e.createdAt)}</span>
-                          </li>
-                        ))}
+                        {history.map(e => {
+                          const actor = members.find(m => m.userId === e.actorId);
+                          return (
+                            <li key={e.id} className="text-xs text-foreground flex items-start justify-between gap-2 border-l-2 border-border pl-2.5 py-0.5">
+                              <span>
+                                {eventLabel(e)}
+                                {actor && <span className="text-muted-foreground"> · {actor.displayName}</span>}
+                              </span>
+                              <span className="text-muted-foreground shrink-0">{formatDateTime(e.createdAt)}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
                   </div>
