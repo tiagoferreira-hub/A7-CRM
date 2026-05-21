@@ -171,8 +171,9 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const OriginIcon = origBadge.icon;
   const leadConv = conversations.find(c => c.leadId === lead.id);
   const isConvClosed = leadConv?.status === "closed";
+  const isAwaitingLead = !!leadConv?.awaitingReply && !isConvClosed;
   const daysNoResp = daysSince(lead.lastInteraction);
-  const noRespAlert = daysNoResp > 2 && !isConvClosed;
+  const noRespAlert = daysNoResp > 2 && isAwaitingLead;
 
   return (
     <>
