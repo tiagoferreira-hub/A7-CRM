@@ -173,11 +173,8 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
     setNewTag("");
   };
 
-  const origBadge = originBadge(lead.origin);
-  const OriginIcon = origBadge.icon;
   const origBadge_ = originBadge(lead.origin);
   const OriginIcon = origBadge_.icon;
-  const origBadge = origBadge_;
   const waitTier = waiting ? waitingTierClasses[waiting.tier] : waitingTierClasses.fresh;
   const noRespAlert = !!waiting && (waiting.tier === "warning" || waiting.tier === "danger");
 
