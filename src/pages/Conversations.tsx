@@ -16,6 +16,18 @@ import {
 import LeadDetailModal from "@/components/crm/LeadDetailModal";
 import StageStepper from "@/components/crm/StageStepper";
 import ConversationRightSidebar, { RightPanelKey } from "@/components/crm/ConversationRightSidebar";
+import { useWaitingTime, waitingTierClasses } from "@/hooks/useWaitingTime";
+
+const WaitingBadge: React.FC<{ since: string }> = ({ since }) => {
+  const w = useWaitingTime(since);
+  if (!w) return null;
+  const c = waitingTierClasses[w.tier];
+  return (
+    <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${c.bg} ${c.text}`}>
+      {w.label}
+    </span>
+  );
+};
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type InboxKey = "all" | "mine" | "noowner" | "calls" | "unread" | "awaiting" | "pending_fup";
