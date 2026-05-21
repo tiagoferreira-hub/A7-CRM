@@ -378,7 +378,11 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                   Editar lead
                 </button>
                 <button
-                  onClick={() => { onClose(); navigate(`/conversas?lead=${lead.id}`); }}
+                  onClick={() => {
+                    const id = lead.id;
+                    onClose();
+                    window.dispatchEvent(new CustomEvent("crm:openConversationByLead", { detail: { leadId: id } }));
+                  }}
                   className="inline-flex items-center gap-1.5 text-sm font-medium h-10 px-4 rounded-lg bg-primary text-primary-foreground hover:opacity-90">
                   <MessageSquare className="w-4 h-4" /> Ver conversa
                 </button>
