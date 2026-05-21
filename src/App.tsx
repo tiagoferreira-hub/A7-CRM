@@ -67,11 +67,14 @@ const AppRoutes = () => {
                   <CampaignsProvider>
                     <ConversationsProvider>
                       <AutomationFlowsProvider>
-                        <Routes>
-                          <Route path="/" element={<Index />} />
-                          <Route path="*" element={<Navigate to="/" replace />} />
-                        </Routes>
+                        <PlaybooksProvider>
+                          <Routes>
+                            <Route path="/" element={<Index />} />
+                            <Route path="*" element={<Navigate to="/" replace />} />
+                          </Routes>
+                        </PlaybooksProvider>
                       </AutomationFlowsProvider>
+
                     </ConversationsProvider>
                   </CampaignsProvider>
                 </FollowUpsProvider>
