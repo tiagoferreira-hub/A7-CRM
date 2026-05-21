@@ -1,14 +1,16 @@
-import React, { useMemo } from "react";
-import { UserRound, Phone, Paperclip, Clock, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { UserRound, Phone, Paperclip, Clock, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon, BookOpen, Copy } from "lucide-react";
 import { Lead, LeadStage, STAGE_LABELS, ORIGIN_LABELS } from "@/types/lead";
 import { Conversation, Message } from "@/context/ConversationsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { useTags } from "@/context/TagsContext";
 import { useLeadHistory } from "@/hooks/useLeadHistory";
+import { usePlaybooks } from "@/context/PlaybooksContext";
 import ServiceBadges from "@/components/crm/ServiceBadges";
 import { cn } from "@/lib/utils";
 
-export type RightPanelKey = "details" | "calls" | "attachments" | "activities";
+export type RightPanelKey = "details" | "calls" | "attachments" | "activities" | "script";
+
 
 interface Props {
   lead: Lead | null;
