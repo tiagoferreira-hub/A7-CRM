@@ -156,6 +156,13 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
         <span className="line-clamp-2">{lead.lastMessage}</span>
       </div>
 
+      {waiting && waitTier && (
+        <div className={`mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${waitTier.bg} ${waitTier.text}`}>
+          <Clock className="w-3 h-3" />
+          {waiting.label}
+        </div>
+      )}
+
       <div className="text-[10px] text-muted-foreground mt-1.5 text-right">
         {formatDate(lead.lastInteraction)}
       </div>
