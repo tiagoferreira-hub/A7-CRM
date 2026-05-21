@@ -32,10 +32,15 @@ const originColors: Record<string, string> = {
 const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
   const { updateLead, moveLead } = useLeads();
   const { tagsForLead } = useTags();
+  const { conversations } = useConversations();
   const members = useCompanyMembers();
   const assignee = lead.assignedTo ? members.find(m => m.userId === lead.assignedTo) : null;
   const leadTags = tagsForLead(lead.id);
   const services = lead.services ?? (lead.service ? [lead.service] : []);
+  const conv = conversations.find(c => c.leadId === lead.id);
+  const awaiting = !!conv?.awaitingReply && conv.status === "open";
+  const waiting = useWaitingTime(awaiting ? (conv?.lastMessageAt ?? lead.lastInteraction) : null);
+  const waitTier = waiting ? waitingTierClasses[waiting.tier] : null;
   const [editing, setEditing] = useState(false);
   const [editServices, setEditServices] = useState<string[]>(services);
   const [editValue, setEditValue] = useState(lead.value.toString());
