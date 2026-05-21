@@ -309,7 +309,9 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                           <div className={`font-medium ${noRespAlert ? "text-crm-warning" : "text-foreground"}`}>
                             {isConvClosed
                               ? "Conversa fechada"
-                              : daysNoResp === 0 ? "Sem mensagens hoje" : `${daysNoResp} ${daysNoResp === 1 ? "dia" : "dias"} sem resposta`}
+                              : isAwaitingLead
+                                ? (daysNoResp === 0 ? "Aguardando lead" : `${daysNoResp} ${daysNoResp === 1 ? "dia" : "dias"} sem resposta`)
+                                : "Aguardando seu retorno"}
                           </div>
                           <div className="text-[11px] text-muted-foreground">Última: {formatDateTime(lead.lastInteraction)}</div>
                         </div>
