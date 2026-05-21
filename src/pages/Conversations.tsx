@@ -179,6 +179,19 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
     markRead(selectedId);
   }, [selectedId, loadMessages, markRead]);
 
+  useEffect(() => {
+    if (!pendingLeadId) return;
+    const conv = conversations
+      .filter(c => c.leadId === pendingLeadId)
+      .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt))[0];
+    if (conv) {
+      setActiveInbox("all");
+      setActiveStage(null);
+      setSelectedId(conv.id);
+      onPendingHandled?.();
+    }
+  }, [pendingLeadId, conversations, onPendingHandled]);
+
   const handleSend = async () => {
     if (!selectedId || !input.trim()) return;
     const msg = await sendMessage(selectedId, input);
