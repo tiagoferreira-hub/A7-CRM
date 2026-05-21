@@ -1,14 +1,10 @@
 import React, { useMemo } from "react";
 import { UserRound, Phone, Paperclip, Clock, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon } from "lucide-react";
-import { Lead, STAGE_LABELS, ORIGIN_LABELS } from "@/types/lead";
+import { Lead, LeadStage, STAGE_LABELS, ORIGIN_LABELS } from "@/types/lead";
 import { Conversation, Message } from "@/context/ConversationsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { useTags } from "@/context/TagsContext";
-import { useAppointments } from "@/context/AppointmentsContext";
-import { useFollowUps } from "@/context/FollowUpsContext";
-import { useTasks } from "@/context/TasksContext";
 import { useLeadHistory } from "@/hooks/useLeadHistory";
-import { APPOINTMENT_TYPE_LABELS } from "@/types/appointment";
 import ServiceBadges from "@/components/crm/ServiceBadges";
 import { cn } from "@/lib/utils";
 
