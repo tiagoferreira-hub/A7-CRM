@@ -175,10 +175,9 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
 
   const origBadge = originBadge(lead.origin);
   const OriginIcon = origBadge.icon;
-  const leadConv = conversations.find(c => c.leadId === lead.id);
-  const isConvClosed = leadConv?.status === "closed";
-  const isAwaitingLead = !!leadConv?.awaitingReply && !isConvClosed;
-  const waiting = useWaitingTime(isAwaitingLead ? (leadConv?.lastMessageAt ?? lead.lastInteraction) : null);
+  const origBadge_ = originBadge(lead.origin);
+  const OriginIcon = origBadge_.icon;
+  const origBadge = origBadge_;
   const waitTier = waiting ? waitingTierClasses[waiting.tier] : waitingTierClasses.fresh;
   const noRespAlert = !!waiting && (waiting.tier === "warning" || waiting.tier === "danger");
 
