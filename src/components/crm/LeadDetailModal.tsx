@@ -58,6 +58,8 @@ const eventLabel = (e: { eventType: string; payload: any }) => {
     case "followup_completed": return "Follow-up concluído";
     case "lost_reason": return `Motivo de perda: ${e.payload?.reason ?? "—"}`;
     case "appointment_created": return `Agendamento (${e.payload?.type ?? ""})`;
+    case "conversation_opened": return "Conversa aberta";
+    case "conversation_closed": return "Conversa fechada";
     default: return e.eventType;
   }
 };
