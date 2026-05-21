@@ -221,18 +221,23 @@ const ConversationRightSidebar: React.FC<Props> = ({
 
             {activePanel === "activities" && (
               <div>
-                {activities.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Nenhuma atividade ainda</p>
+                {history.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sem eventos.</p>
                 ) : (
-                  <ol className="relative border-l border-border ml-2 space-y-3">
-                    {activities.map(a => (
-                      <li key={a.id} className="pl-4 relative">
-                        <span className={cn("absolute -left-[7px] top-1 w-3 h-3 rounded-full ring-2 ring-card", a.color)} />
-                        <div className="text-xs text-foreground font-medium">{a.label}</div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5">{formatDateTime(a.ts)}</div>
-                      </li>
-                    ))}
-                  </ol>
+                  <ul className="space-y-1.5">
+                    {history.map(e => {
+                      const actor = members.find(m => m.userId === e.actorId);
+                      return (
+                        <li key={e.id} className="text-xs text-foreground flex items-start justify-between gap-2 border-l-2 border-border pl-2.5 py-0.5">
+                          <span>
+                            {eventLabel(e)}
+                            {actor && <span className="text-muted-foreground"> · {actor.displayName}</span>}
+                          </span>
+                          <span className="text-muted-foreground shrink-0">{formatDateTime(e.createdAt)}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
               </div>
             )}
