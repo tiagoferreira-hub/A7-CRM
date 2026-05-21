@@ -14,6 +14,7 @@ import LossReasonModal from "./LossReasonModal";
 import StageStepper from "./StageStepper";
 import ServiceBadges from "./ServiceBadges";
 import { useConversations } from "@/context/ConversationsContext";
+import { useWaitingTime, waitingTierClasses } from "@/hooks/useWaitingTime";
 import {
   Phone, Plus, X as XIcon, MessageCircle, Instagram, Megaphone, Hand,
   Search as SearchIcon, Sparkles, MessageSquare, CalendarPlus, ListTodo,
@@ -172,8 +173,9 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const leadConv = conversations.find(c => c.leadId === lead.id);
   const isConvClosed = leadConv?.status === "closed";
   const isAwaitingLead = !!leadConv?.awaitingReply && !isConvClosed;
-  const daysNoResp = daysSince(lead.lastInteraction);
-  const noRespAlert = daysNoResp > 2 && isAwaitingLead;
+  const waiting = useWaitingTime(isAwaitingLead ? (leadConv?.lastMessageAt ?? lead.lastInteraction) : null);
+  const waitTier = waiting ? waitingTierClasses[waiting.tier] : waitingTierClasses.fresh;
+  const noRespAlert = !!waiting && (waiting.tier === "warning" || waiting.tier === "danger");
 
   return (
     <>
@@ -299,18 +301,16 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                   <div>
                     <SectionLabel>Atividade</SectionLabel>
                     <div className="space-y-2.5">
-                      <div className={`flex items-center gap-2.5 rounded-lg border p-3 ${
-                        noRespAlert ? "border-crm-warning/40 bg-crm-warning-light" : "border-border"
-                      }`}>
+                      <div className={`flex items-center gap-2.5 rounded-lg border p-3 ${waitTier.bg} ${waitTier.border}`}>
                         {noRespAlert
-                          ? <AlertCircle className="w-4 h-4 text-crm-warning" />
+                          ? <AlertCircle className={`w-4 h-4 ${waitTier.text}`} />
                           : <Clock className="w-4 h-4 text-muted-foreground" />}
                         <div className="text-sm">
-                          <div className={`font-medium ${noRespAlert ? "text-crm-warning" : "text-foreground"}`}>
+                          <div className={`font-medium ${noRespAlert ? waitTier.text : "text-foreground"}`}>
                             {isConvClosed
                               ? "Conversa fechada"
                               : isAwaitingLead
-                                ? (daysNoResp === 0 ? "Aguardando lead" : `${daysNoResp} ${daysNoResp === 1 ? "dia" : "dias"} sem resposta`)
+                                ? (waiting?.label ?? "Aguardando lead")
                                 : "Aguardando seu retorno"}
                           </div>
                           <div className="text-[11px] text-muted-foreground">Última: {formatDateTime(lead.lastInteraction)}</div>

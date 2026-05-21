@@ -5,7 +5,9 @@ import { useTags } from "@/context/TagsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import StageStepper from "./StageStepper";
 import ServiceBadges from "./ServiceBadges";
-import { Phone, MessageSquare, Pencil, Check, X, User } from "lucide-react";
+import { useConversations } from "@/context/ConversationsContext";
+import { useWaitingTime, waitingTierClasses } from "@/hooks/useWaitingTime";
+import { Phone, MessageSquare, Pencil, Check, X, User, Clock } from "lucide-react";
 
 interface LeadCardProps {
   lead: Lead;
@@ -30,10 +32,15 @@ const originColors: Record<string, string> = {
 const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
   const { updateLead, moveLead } = useLeads();
   const { tagsForLead } = useTags();
+  const { conversations } = useConversations();
   const members = useCompanyMembers();
   const assignee = lead.assignedTo ? members.find(m => m.userId === lead.assignedTo) : null;
   const leadTags = tagsForLead(lead.id);
   const services = lead.services ?? (lead.service ? [lead.service] : []);
+  const conv = conversations.find(c => c.leadId === lead.id);
+  const awaiting = !!conv?.awaitingReply && conv.status === "open";
+  const waiting = useWaitingTime(awaiting ? (conv?.lastMessageAt ?? lead.lastInteraction) : null);
+  const waitTier = waiting ? waitingTierClasses[waiting.tier] : null;
   const [editing, setEditing] = useState(false);
   const [editServices, setEditServices] = useState<string[]>(services);
   const [editValue, setEditValue] = useState(lead.value.toString());
@@ -148,6 +155,13 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
         <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
         <span className="line-clamp-2">{lead.lastMessage}</span>
       </div>
+
+      {waiting && waitTier && (
+        <div className={`mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${waitTier.bg} ${waitTier.text}`}>
+          <Clock className="w-3 h-3" />
+          {waiting.label}
+        </div>
+      )}
 
       <div className="text-[10px] text-muted-foreground mt-1.5 text-right">
         {formatDate(lead.lastInteraction)}
