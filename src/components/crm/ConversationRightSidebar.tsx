@@ -36,9 +36,6 @@ const ConversationRightSidebar: React.FC<Props> = ({
 }) => {
   const members = useCompanyMembers();
   const { tagsForLead } = useTags();
-  const { appointments } = useAppointments();
-  const { followUps } = useFollowUps();
-  const { tasks } = useTasks();
   const history = useLeadHistory(lead?.id);
 
   const owner = lead?.assignedTo ? members.find(m => m.userId === lead.assignedTo) : null;
