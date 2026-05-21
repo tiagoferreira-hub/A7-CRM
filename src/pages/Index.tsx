@@ -11,6 +11,8 @@ import Contacts from "@/pages/Contacts";
 import Disparos from "@/pages/Disparos";
 import Workflows from "@/pages/Workflows";
 import Reports from "@/pages/Reports";
+import Playbooks from "@/pages/Playbooks";
+
 
 const Index: React.FC = () => {
   const { role } = useAuth();
