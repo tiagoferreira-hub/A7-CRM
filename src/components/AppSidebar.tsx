@@ -2,15 +2,17 @@ import React from "react";
 import {
   Workflow, MessageSquare, Users, Calendar, CheckSquare, Send,
   GitBranch, BarChart3, Settings as SettingsIcon, LogOut, ArrowLeft, Home,
-  Sun, Moon,
+  Sun, Moon, BookOpen,
 } from "lucide-react";
+
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import Logo from "@/components/Logo";
 
 export type AppTab =
   | "home" | "lifecycle" | "conversations" | "contacts" | "agenda"
-  | "tasks" | "disparos" | "workflows" | "reports" | "settings";
+  | "tasks" | "disparos" | "workflows" | "playbooks" | "reports" | "settings";
+
 
 interface Props {
   tab: AppTab;
@@ -31,7 +33,9 @@ const AppSidebar: React.FC<Props> = ({ tab, setTab }) => {
     { key: "tasks", icon: CheckSquare, label: "Tarefas" },
     { key: "disparos", icon: Send, label: "Disparos" },
     { key: "workflows", icon: GitBranch, label: "Fluxos de Trabalho" },
+    { key: "playbooks", icon: BookOpen, label: "Playbooks" },
     { key: "reports", icon: BarChart3, label: "Relatórios", roles: ["owner", "client", "admin"] },
+
     { key: "settings", icon: SettingsIcon, label: "Configurações", roles: ["owner", "client", "admin"] },
   ];
 

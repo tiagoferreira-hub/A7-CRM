@@ -623,6 +623,42 @@ export type Database = {
           },
         ]
       }
+      playbooks: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string
+          flow_nodes: Json
+          id: string
+          sections: Json
+          title: string
+          updated_at: string
+          view_mode: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string
+          flow_nodes?: Json
+          id?: string
+          sections?: Json
+          title: string
+          updated_at?: string
+          view_mode?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string
+          flow_nodes?: Json
+          id?: string
+          sections?: Json
+          title?: string
+          updated_at?: string
+          view_mode?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company_id: string | null
@@ -660,6 +696,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      script_usage: {
+        Row: {
+          company_id: string
+          conversation_id: string
+          created_at: string
+          id: string
+          lead_id: string
+          lead_stage_at_use: string | null
+          script_id: string
+          used_at: string
+          used_by: string | null
+        }
+        Insert: {
+          company_id: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          lead_stage_at_use?: string | null
+          script_id: string
+          used_at?: string
+          used_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          lead_stage_at_use?: string | null
+          script_id?: string
+          used_at?: string
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      scripts: {
+        Row: {
+          company_id: string
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          stage: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          stage?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       services: {
         Row: {

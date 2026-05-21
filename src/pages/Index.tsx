@@ -11,6 +11,8 @@ import Contacts from "@/pages/Contacts";
 import Disparos from "@/pages/Disparos";
 import Workflows from "@/pages/Workflows";
 import Reports from "@/pages/Reports";
+import Playbooks from "@/pages/Playbooks";
+
 
 const Index: React.FC = () => {
   const { role } = useAuth();
@@ -25,9 +27,18 @@ const Index: React.FC = () => {
       setPendingLeadId(ce.detail.leadId);
       setTab("conversations");
     };
+    const navHandler = (e: Event) => {
+      const ce = e as CustomEvent<{ tab: AppTab }>;
+      if (ce.detail?.tab) setTab(ce.detail.tab);
+    };
     window.addEventListener("crm:openConversationByLead", handler);
-    return () => window.removeEventListener("crm:openConversationByLead", handler);
+    window.addEventListener("crm:navigate", navHandler);
+    return () => {
+      window.removeEventListener("crm:openConversationByLead", handler);
+      window.removeEventListener("crm:navigate", navHandler);
+    };
   }, []);
+
 
   return (
     <div className="flex h-screen bg-background w-full">
@@ -46,7 +57,9 @@ const Index: React.FC = () => {
         {tab === "tasks" && <Tasks />}
         {tab === "disparos" && <Disparos />}
         {tab === "workflows" && <Workflows />}
+        {tab === "playbooks" && <Playbooks />}
         {tab === "reports" && <Reports />}
+
         {tab === "settings" && <Settings />}
       </main>
     </div>

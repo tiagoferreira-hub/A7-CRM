@@ -1,14 +1,16 @@
-import React, { useMemo } from "react";
-import { UserRound, Phone, Paperclip, Clock, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { UserRound, Phone, Paperclip, Clock, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon, BookOpen, Copy } from "lucide-react";
 import { Lead, LeadStage, STAGE_LABELS, ORIGIN_LABELS } from "@/types/lead";
 import { Conversation, Message } from "@/context/ConversationsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { useTags } from "@/context/TagsContext";
 import { useLeadHistory } from "@/hooks/useLeadHistory";
+import { usePlaybooks } from "@/context/PlaybooksContext";
 import ServiceBadges from "@/components/crm/ServiceBadges";
 import { cn } from "@/lib/utils";
 
-export type RightPanelKey = "details" | "calls" | "attachments" | "activities";
+export type RightPanelKey = "details" | "calls" | "attachments" | "activities" | "script";
+
 
 interface Props {
   lead: Lead | null;
@@ -37,6 +39,15 @@ const ConversationRightSidebar: React.FC<Props> = ({
   const members = useCompanyMembers();
   const { tagsForLead } = useTags();
   const history = useLeadHistory(lead?.id);
+  const { scripts, recordUsage } = usePlaybooks();
+  const [scriptOverrideId, setScriptOverrideId] = useState<string | null>(null);
+
+  const activeScript = useMemo(() => {
+    if (!lead) return null;
+    if (scriptOverrideId) return scripts.find(s => s.id === scriptOverrideId) ?? null;
+    return scripts.find(s => s.stage === lead.stage && s.isActive) ?? null;
+  }, [lead, scripts, scriptOverrideId]);
+
 
   const owner = lead?.assignedTo ? members.find(m => m.userId === lead.assignedTo) : null;
   const leadTags = lead ? tagsForLead(lead.id) : [];
@@ -77,7 +88,21 @@ const ConversationRightSidebar: React.FC<Props> = ({
     { key: "calls", icon: Phone, label: "Chamadas" },
     { key: "attachments", icon: Paperclip, label: "Anexos" },
     { key: "activities", icon: Clock, label: "Atividades" },
+    { key: "script", icon: BookOpen, label: "Script" },
   ];
+
+  const scriptBlocks = useMemo(
+    () => (activeScript?.content ?? "").split(/\n{2,}/).map(b => b.trim()).filter(Boolean),
+    [activeScript]
+  );
+
+  const handleUseBlock = (text: string) => {
+    window.dispatchEvent(new CustomEvent("crm:scriptInsert", { detail: { text } }));
+    if (activeScript && conversation && lead) {
+      recordUsage(activeScript.id, conversation.id, lead.id, lead.stage);
+    }
+  };
+
 
   const handleClick = (k: RightPanelKey) => {
     onSelectPanel(activePanel === k ? null : k);
@@ -241,6 +266,61 @@ const ConversationRightSidebar: React.FC<Props> = ({
                 )}
               </div>
             )}
+
+            {activePanel === "script" && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Script</label>
+                  <select
+                    value={activeScript?.id ?? ""}
+                    onChange={e => setScriptOverrideId(e.target.value || null)}
+                    className="w-full text-xs border border-input rounded-md px-2 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="">— Ativo da etapa —</option>
+                    {scripts.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} {s.isActive ? "•" : ""} ({STAGE_LABELS[s.stage]})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {!activeScript ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-xs">Nenhum script ativo para esta etapa</p>
+                    <button
+                      onClick={() => window.dispatchEvent(new CustomEvent("crm:navigate", { detail: { tab: "playbooks" } }))}
+                      className="text-[11px] text-primary hover:underline mt-2"
+                    >
+                      Criar em Playbooks → Scripts
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">{activeScript.name}</p>
+                    {scriptBlocks.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Script sem conteúdo.</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {scriptBlocks.map((block, i) => (
+                          <li key={i} className="bg-muted/40 border border-border rounded-md p-2 group">
+                            <p className="text-xs text-foreground whitespace-pre-wrap">{block}</p>
+                            <button
+                              onClick={() => handleUseBlock(block)}
+                              className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                            >
+                              <Copy className="w-3 h-3" /> Usar
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
           {activePanel === "details" && (
             <div className="border-t border-border p-3">
