@@ -11,7 +11,8 @@ import Logo from "@/components/Logo";
 
 export type AppTab =
   | "home" | "lifecycle" | "conversations" | "contacts" | "agenda"
-  | "tasks" | "disparos" | "workflows" | "reports" | "settings";
+  | "tasks" | "disparos" | "workflows" | "playbooks" | "reports" | "settings";
+
 
 interface Props {
   tab: AppTab;
