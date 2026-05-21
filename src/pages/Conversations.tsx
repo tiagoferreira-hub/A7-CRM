@@ -405,6 +405,9 @@ const Conversations: React.FC = () => {
                         <span className="truncate max-w-[60px]">{owner.displayName.split(" ")[0]}</span>
                       </span>
                     )}
+                    {c.awaitingReply && c.status === "open" && (
+                      <WaitingBadge since={c.lastMessageAt} />
+                    )}
                   </div>
                 </div>
                 {c.unreadCount > 0 && (
