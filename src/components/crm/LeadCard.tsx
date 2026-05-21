@@ -5,7 +5,9 @@ import { useTags } from "@/context/TagsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import StageStepper from "./StageStepper";
 import ServiceBadges from "./ServiceBadges";
-import { Phone, MessageSquare, Pencil, Check, X, User } from "lucide-react";
+import { useConversations } from "@/context/ConversationsContext";
+import { useWaitingTime, waitingTierClasses } from "@/hooks/useWaitingTime";
+import { Phone, MessageSquare, Pencil, Check, X, User, Clock } from "lucide-react";
 
 interface LeadCardProps {
   lead: Lead;
