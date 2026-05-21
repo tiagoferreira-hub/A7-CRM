@@ -33,7 +33,9 @@ const AppSidebar: React.FC<Props> = ({ tab, setTab }) => {
     { key: "tasks", icon: CheckSquare, label: "Tarefas" },
     { key: "disparos", icon: Send, label: "Disparos" },
     { key: "workflows", icon: GitBranch, label: "Fluxos de Trabalho" },
+    { key: "playbooks", icon: BookOpen, label: "Playbooks" },
     { key: "reports", icon: BarChart3, label: "Relatórios", roles: ["owner", "client", "admin"] },
+
     { key: "settings", icon: SettingsIcon, label: "Configurações", roles: ["owner", "client", "admin"] },
   ];
 
