@@ -41,6 +41,15 @@ const rowToLead = (row: any): Lead => ({
   createdAt: row.created_at,
   assignedTo: row.assigned_to ?? null,
   lossReason: row.loss_reason ?? null,
+  channel: row.channel ?? undefined,
+  source: row.source ?? null,
+  utmSource: row.utm_source ?? null,
+  utmMedium: row.utm_medium ?? null,
+  utmCampaign: row.utm_campaign ?? null,
+  utmContent: row.utm_content ?? null,
+  utmTerm: row.utm_term ?? null,
+  adId: row.ad_id ?? null,
+  referrer: row.referrer ?? null,
 });
 
 export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -94,6 +103,16 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         last_message: lead.lastMessage,
         last_interaction: lead.lastInteraction,
         observations: lead.observations,
+        // origem/canal + rastreamento de campanha (FASE 1.2)
+        channel: lead.channel ?? undefined,
+        source: lead.source ?? undefined,
+        utm_source: lead.utmSource ?? undefined,
+        utm_medium: lead.utmMedium ?? undefined,
+        utm_campaign: lead.utmCampaign ?? undefined,
+        utm_content: lead.utmContent ?? undefined,
+        utm_term: lead.utmTerm ?? undefined,
+        ad_id: lead.adId ?? undefined,
+        referrer: lead.referrer ?? undefined,
       } as any)
       .select()
       .single();
@@ -124,6 +143,8 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (updates.observations !== undefined) dbUpdates.observations = updates.observations;
     if ((updates as any).assignedTo !== undefined) dbUpdates.assigned_to = (updates as any).assignedTo;
     if ((updates as any).lossReason !== undefined) dbUpdates.loss_reason = (updates as any).lossReason;
+    if (updates.channel !== undefined) dbUpdates.channel = updates.channel;
+    if (updates.source !== undefined) dbUpdates.source = updates.source;
 
     const { error } = await supabase.from("leads").update(dbUpdates).eq("id", id).eq("company_id", activeCompanyId);
     if (error) throw error;

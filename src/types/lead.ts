@@ -15,7 +15,15 @@ export type LeadOrigin =
   | "indicacao"
   | "organico";
 
-export type LeadChannel = "whatsapp" | "instagram" | "manual";
+export type LeadChannel =
+  | "whatsapp"
+  | "instagram"
+  | "messenger"
+  | "tiktok"
+  | "site"
+  | "indicacao"
+  | "ads"
+  | "manual";
 
 // Origem de uma mudança de etapa (registrada em lifecycle_events)
 export type LifecycleTrigger = "manual" | "keyword" | "workflow" | "agenda" | "ai";
@@ -39,6 +47,15 @@ export interface Lead {
   firstInteractionAt?: string | null;
   externalConversationId?: string | null;
   lossReason?: string | null;
+  // Origem/rastreamento de campanha (FASE 1.2)
+  source?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+  utmTerm?: string | null;
+  adId?: string | null;
+  referrer?: string | null;
 }
 
 export const STAGE_LABELS: Record<LeadStage, string> = {
@@ -103,7 +120,21 @@ export const ORIGIN_OPTIONS: LeadOrigin[] = [
 export const CHANNEL_LABELS: Record<LeadChannel, string> = {
   whatsapp: "WhatsApp",
   instagram: "Instagram",
+  messenger: "Messenger",
+  tiktok: "TikTok",
+  site: "Site",
+  indicacao: "Indicação",
+  ads: "Anúncios",
   manual: "Manual",
 };
 
-export const CHANNEL_OPTIONS: LeadChannel[] = ["whatsapp", "instagram", "manual"];
+export const CHANNEL_OPTIONS: LeadChannel[] = [
+  "whatsapp",
+  "instagram",
+  "messenger",
+  "tiktok",
+  "site",
+  "indicacao",
+  "ads",
+  "manual",
+];

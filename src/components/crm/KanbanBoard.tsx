@@ -3,7 +3,7 @@ import { useLeads } from "@/context/LeadsContext";
 import { useTags } from "@/context/TagsContext";
 import { useFollowUps } from "@/context/FollowUpsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
-import { Lead, LeadOrigin, LeadStage, STAGE_ORDER, ORIGIN_LABELS, ORIGIN_OPTIONS, STAGE_LABELS } from "@/types/lead";
+import { Lead, LeadOrigin, LeadStage, LeadChannel, STAGE_ORDER, ORIGIN_LABELS, ORIGIN_OPTIONS, STAGE_LABELS, CHANNEL_LABELS, CHANNEL_OPTIONS } from "@/types/lead";
 import KanbanColumn from "./KanbanColumn";
 import LeadDetailModal from "./LeadDetailModal";
 import NewLeadModal from "./NewLeadModal";
@@ -17,6 +17,7 @@ const KanbanBoard: React.FC = () => {
   const members = useCompanyMembers();
   const [search, setSearch] = useState("");
   const [filterOrigin, setFilterOrigin] = useState<LeadOrigin | "">("");
+  const [filterChannel, setFilterChannel] = useState<LeadChannel | "">("");
   const [filterStage, setFilterStage] = useState<LeadStage | "">("");
   const [filterAssignee, setFilterAssignee] = useState<string>("");
   const [filterTag, setFilterTag] = useState<string>("");
@@ -46,6 +47,7 @@ const KanbanBoard: React.FC = () => {
         if (!l.phone.toLowerCase().includes(q) && !l.name.toLowerCase().includes(q)) return false;
       }
       if (filterOrigin && l.origin !== filterOrigin) return false;
+      if (filterChannel && l.channel !== filterChannel) return false;
       if (filterStage && l.stage !== filterStage) return false;
       if (filterAssignee === "__none__" && l.assignedTo) return false;
       if (filterAssignee && filterAssignee !== "__none__" && l.assignedTo !== filterAssignee) return false;
@@ -53,7 +55,7 @@ const KanbanBoard: React.FC = () => {
       if (filterPendingFup && !leadsWithPendingFup.has(l.id)) return false;
       return true;
     });
-  }, [leads, search, filterOrigin, filterStage, filterAssignee, filterTag, filterPendingFup, tagsByLead, leadsWithPendingFup]);
+  }, [leads, search, filterOrigin, filterChannel, filterStage, filterAssignee, filterTag, filterPendingFup, tagsByLead, leadsWithPendingFup]);
 
   const leadsByStage = useMemo(() => {
     const map: Record<LeadStage, Lead[]> = {} as any;
@@ -79,7 +81,7 @@ const KanbanBoard: React.FC = () => {
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border transition-colors ${
-            showFilters || filterOrigin || filterStage
+            showFilters || filterOrigin || filterChannel || filterStage
               ? "border-primary bg-crm-info-light text-primary"
               : "border-input text-muted-foreground hover:bg-accent"
           }`}
@@ -104,6 +106,11 @@ const KanbanBoard: React.FC = () => {
             {ORIGIN_OPTIONS.map((o) => <option key={o} value={o}>{ORIGIN_LABELS[o]}</option>)}
           </select>
           <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+            value={filterChannel} onChange={(e) => setFilterChannel(e.target.value as LeadChannel | "")}>
+            <option value="">Todos os canais</option>
+            {CHANNEL_OPTIONS.map((c) => <option key={c} value={c}>{CHANNEL_LABELS[c]}</option>)}
+          </select>
+          <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
             value={filterStage} onChange={(e) => setFilterStage(e.target.value as LeadStage | "")}>
             <option value="">Todas as etapas</option>
             {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
@@ -123,8 +130,8 @@ const KanbanBoard: React.FC = () => {
             <input type="checkbox" checked={filterPendingFup} onChange={e => setFilterPendingFup(e.target.checked)} />
             Follow-up pendente
           </label>
-          {(filterOrigin || filterStage || filterAssignee || filterTag || filterPendingFup) && (
-            <button onClick={() => { setFilterOrigin(""); setFilterStage(""); setFilterAssignee(""); setFilterTag(""); setFilterPendingFup(false); }}
+          {(filterOrigin || filterChannel || filterStage || filterAssignee || filterTag || filterPendingFup) && (
+            <button onClick={() => { setFilterOrigin(""); setFilterChannel(""); setFilterStage(""); setFilterAssignee(""); setFilterTag(""); setFilterPendingFup(false); }}
               className="text-xs text-primary hover:underline">Limpar filtros</button>
           )}
         </div>

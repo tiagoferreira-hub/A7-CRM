@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Lead, ORIGIN_LABELS, LeadStage } from "@/types/lead";
+import { Lead, ORIGIN_LABELS, LeadStage, CHANNEL_LABELS } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
 import { useTags } from "@/context/TagsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
@@ -27,6 +27,17 @@ const originColors: Record<string, string> = {
   bio_instagram: "bg-crm-purple-light text-crm-purple",
   anuncio: "bg-crm-info-light text-crm-info",
   outro: "bg-crm-warning-light text-crm-warning",
+};
+
+const channelColors: Record<string, string> = {
+  whatsapp: "bg-crm-success-light text-crm-success",
+  instagram: "bg-crm-purple-light text-crm-purple",
+  messenger: "bg-crm-info-light text-crm-info",
+  tiktok: "bg-foreground/10 text-foreground",
+  site: "bg-crm-info-light text-crm-info",
+  indicacao: "bg-crm-warning-light text-crm-warning",
+  ads: "bg-crm-info-light text-crm-info",
+  manual: "bg-muted text-muted-foreground",
 };
 
 const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
@@ -98,6 +109,11 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
         <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${originColors[lead.origin] ?? "bg-muted text-muted-foreground"}`}>
           {ORIGIN_LABELS[lead.origin]}
         </span>
+        {lead.channel && lead.channel !== "manual" && (
+          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${channelColors[lead.channel] ?? "bg-muted text-muted-foreground"}`}>
+            {CHANNEL_LABELS[lead.channel]}
+          </span>
+        )}
         {leadTags.map(t => (
           <span key={t.id} className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: `${t.color}22`, color: t.color }}>
             {t.name}
