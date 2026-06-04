@@ -1,14 +1,19 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { Lead, LeadStage } from "@/types/lead";
+import { Lead, LeadStage, LifecycleTrigger } from "@/types/lead";
 
 interface LeadsContextType {
   leads: Lead[];
   addLead: (lead: Omit<Lead, "id" | "createdAt">) => Promise<Lead | null>;
   findLeadByPhone: (phone: string) => Lead | null;
   updateLead: (id: string, updates: Partial<Lead>) => void;
-  moveLead: (id: string, newStage: LeadStage, lossReason?: string | null) => void;
+  moveLead: (
+    id: string,
+    newStage: LeadStage,
+    lossReason?: string | null,
+    meta?: { trigger?: LifecycleTrigger; triggerRef?: string | null },
+  ) => void;
   loading: boolean;
 }
 
@@ -125,13 +130,39 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
   }, [activeCompanyId]);
 
-  const moveLead = useCallback(async (id: string, newStage: LeadStage, lossReason?: string | null) => {
+  // Função ÚNICA de mudança de etapa (moveLeadStage do brief): atualiza o lead e
+  // grava o evento em lifecycle_events com a origem da mudança (trigger_type).
+  const moveLead = useCallback(async (
+    id: string,
+    newStage: LeadStage,
+    lossReason?: string | null,
+    meta?: { trigger?: LifecycleTrigger; triggerRef?: string | null },
+  ) => {
     if (!activeCompanyId) return;
+    const fromStage = leads.find(l => l.id === id)?.stage ?? null;
+    if (fromStage === newStage) return; // nada mudou, não registra evento
+
     const upd: any = { stage: newStage };
     if (newStage === "perdido" && lossReason !== undefined) upd.loss_reason = lossReason;
     await supabase.from("leads").update(upd).eq("id", id).eq("company_id", activeCompanyId);
     setLeads(prev => prev.map(l => l.id === id ? { ...l, stage: newStage, lossReason: upd.loss_reason ?? l.lossReason } : l));
-  }, [activeCompanyId]);
+
+    // Evento de lifecycle (append-only). Falha aqui não deve travar a UI; a tabela
+    // pode ainda não existir até a migration ser aplicada no banco.
+    try {
+      await (supabase as any).from("lifecycle_events").insert({
+        company_id: activeCompanyId,
+        lead_id: id,
+        from_stage: fromStage,
+        to_stage: newStage,
+        trigger_type: meta?.trigger ?? "manual",
+        trigger_ref: meta?.triggerRef ?? null,
+        created_by: user?.id ?? null,
+      });
+    } catch {
+      /* lifecycle_events ainda não disponível — ignorar silenciosamente */
+    }
+  }, [activeCompanyId, leads, user]);
 
   return (
     <LeadsContext.Provider value={{ leads, addLead, findLeadByPhone, updateLead, moveLead, loading }}>

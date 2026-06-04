@@ -17,6 +17,9 @@ export type LeadOrigin =
 
 export type LeadChannel = "whatsapp" | "instagram" | "manual";
 
+// Origem de uma mudança de etapa (registrada em lifecycle_events)
+export type LifecycleTrigger = "manual" | "keyword" | "workflow" | "agenda" | "ai";
+
 export interface Lead {
   id: string;
   name: string;
