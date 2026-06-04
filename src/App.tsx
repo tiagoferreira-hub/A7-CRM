@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ServicesProvider } from "@/context/ServicesContext";
 import { LeadsProvider } from "@/context/LeadsContext";
+import { KeywordRulesProvider } from "@/context/KeywordRulesContext";
 import { TasksProvider } from "@/context/TasksContext";
 import { DocumentsProvider } from "@/context/DocumentsContext";
 import { ConversationsProvider } from "@/context/ConversationsContext";
@@ -59,6 +60,7 @@ const AppRoutes = () => {
   return (
     <ServicesProvider>
       <LeadsProvider>
+        <KeywordRulesProvider>
         <TagsProvider>
           <TasksProvider>
             <DocumentsProvider>
@@ -82,6 +84,7 @@ const AppRoutes = () => {
             </DocumentsProvider>
           </TasksProvider>
         </TagsProvider>
+        </KeywordRulesProvider>
       </LeadsProvider>
     </ServicesProvider>
   );
