@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { useServices } from "@/context/ServicesContext";
 import { useCompanyLogo } from "@/hooks/useCompanyLogo";
 import { Plus, Pencil, Trash2, Check, X, Upload, Image as ImageIcon } from "lucide-react";
+import KeywordRulesSettings from "@/components/crm/KeywordRulesSettings";
 
 const Settings: React.FC = () => {
   const { services, addService, updateService, deleteService } = useServices();
@@ -163,6 +164,8 @@ const Settings: React.FC = () => {
           )}
         </div>
       </div>
+
+      <KeywordRulesSettings />
     </div>
   );
 };

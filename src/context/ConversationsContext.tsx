@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useLeads } from "@/context/LeadsContext";
+import { useKeywordRules } from "@/context/KeywordRulesContext";
+import { evaluateKeywords } from "@/lib/keywordMatcher";
 
 export interface Conversation {
   id: string;
@@ -71,8 +74,22 @@ const rowToMsg = (r: any): Message => ({
 
 export const ConversationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { activeCompanyId, role, user } = useAuth();
+  const { leads, moveLead } = useLeads();
+  const { rules } = useKeywordRules();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Aplica as regras de palavra-chave da company à mensagem; no 1º match move a etapa
+  // do lead (trigger 'keyword') respeitando a regra de retrocesso. Append-only/silencioso.
+  const applyKeywordRules = useCallback((conversationId: string, body: string) => {
+    if (!rules.length || !body.trim()) return;
+    const conv = conversations.find((c) => c.id === conversationId);
+    if (!conv) return;
+    const lead = leads.find((l) => l.id === conv.leadId);
+    if (!lead) return;
+    const hit = evaluateKeywords(body, rules, lead.stage);
+    if (hit) moveLead(lead.id, hit.target, null, { trigger: "keyword", triggerRef: hit.rule.id });
+  }, [rules, conversations, leads, moveLead]);
 
   const reload = useCallback(async () => {
     if (!activeCompanyId) { setConversations([]); return; }
@@ -128,10 +145,12 @@ export const ConversationsProvider: React.FC<{ children: React.ReactNode }> = ({
           } : c)
           .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt))
       );
+      // Regras de palavra-chave → lifecycle (recebida ou enviada).
+      applyKeywordRules(conversationId, body);
       return rowToMsg(data);
     }
     return null;
-  }, [activeCompanyId]);
+  }, [activeCompanyId, applyKeywordRules]);
 
   const markRead = useCallback(async (conversationId: string) => {
     if (!activeCompanyId) return;
