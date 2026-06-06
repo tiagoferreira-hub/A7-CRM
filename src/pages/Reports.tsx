@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Dashboard from "@/components/crm/Dashboard";
 import ConversationsReport from "@/components/crm/ConversationsReport";
+import ConversionReport from "@/components/crm/ConversionReport";
 import { BarChart3, MessageSquare, MessageCircleReply, Users, TrendingUp, Headphones, Workflow } from "lucide-react";
 
 type Category = "lifecycle" | "conversations" | "responses" | "users" | "conversion" | "attendance";
@@ -44,7 +45,8 @@ const Reports: React.FC = () => {
       <div className="flex-1 overflow-y-auto">
         {cat === "lifecycle" && <Dashboard />}
         {cat === "conversations" && <ConversationsReport />}
-        {cat !== "lifecycle" && cat !== "conversations" && (
+        {cat === "conversion" && <ConversionReport />}
+        {cat !== "lifecycle" && cat !== "conversations" && cat !== "conversion" && (
           <div className="p-6 max-w-3xl mx-auto">
             <div className="border border-dashed border-border rounded-xl p-12 text-center bg-card">
               {(() => {
