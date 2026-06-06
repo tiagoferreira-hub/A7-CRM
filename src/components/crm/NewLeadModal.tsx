@@ -10,7 +10,7 @@ interface Props {
 }
 
 const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
-  const { addLead } = useLeads();
+  const { addLead, leads } = useLeads();
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -20,15 +20,18 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
     lastMessage: "",
     observations: "",
     stage: "lead_entrou" as LeadStage,
+    referredBy: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone) return;
+    // Se foi indicado e a origem ainda está no padrão, marca como indicação.
+    const origin = form.referredBy && form.origin === "manual" ? "indicacao" : form.origin;
     addLead({
       name: form.name,
       phone: form.phone,
-      origin: form.origin,
+      origin,
       stage: form.stage,
       service: form.services[0] ?? "",
       services: form.services,
@@ -36,10 +39,11 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
       lastMessage: form.lastMessage,
       lastInteraction: new Date().toISOString(),
       observations: form.observations,
-    });
+      referredByLeadId: form.referredBy || null,
+    } as any);
     setForm({
       name: "", phone: "", origin: "manual", services: [],
-      value: "", lastMessage: "", observations: "", stage: "lead_entrou",
+      value: "", lastMessage: "", observations: "", stage: "lead_entrou", referredBy: "",
     });
     onClose();
   };
@@ -65,6 +69,13 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
             <label className="text-xs font-medium text-muted-foreground">Origem</label>
             <select className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.origin} onChange={(e) => set("origin", e.target.value)}>
               {ORIGIN_OPTIONS.map((o) => <option key={o} value={o}>{ORIGIN_LABELS[o]}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Indicado por (opcional)</label>
+            <select className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.referredBy} onChange={(e) => set("referredBy", e.target.value)}>
+              <option value="">Ninguém / captação direta</option>
+              {leads.map((l) => <option key={l.id} value={l.id}>{l.name} — {l.phone}</option>)}
             </select>
           </div>
           <div>

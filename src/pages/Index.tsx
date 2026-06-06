@@ -9,6 +9,7 @@ import Conversations from "@/pages/Conversations";
 import Agenda from "@/pages/Agenda";
 import Contacts from "@/pages/Contacts";
 import Disparos from "@/pages/Disparos";
+import Indicacoes from "@/pages/Indicacoes";
 import Workflows from "@/pages/Workflows";
 import Reports from "@/pages/Reports";
 import Playbooks from "@/pages/Playbooks";
@@ -56,6 +57,7 @@ const Index: React.FC = () => {
         {tab === "agenda" && <Agenda />}
         {tab === "tasks" && <Tasks />}
         {tab === "disparos" && <Disparos />}
+        {tab === "indicacoes" && <Indicacoes />}
         {tab === "workflows" && <Workflows />}
         {tab === "playbooks" && <Playbooks />}
         {tab === "reports" && <Reports />}
