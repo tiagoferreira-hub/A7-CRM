@@ -56,6 +56,8 @@ export interface Lead {
   utmTerm?: string | null;
   adId?: string | null;
   referrer?: string | null;
+  // Programa de indicação: lead/cliente que indicou este lead
+  referredByLeadId?: string | null;
 }
 
 export const STAGE_LABELS: Record<LeadStage, string> = {

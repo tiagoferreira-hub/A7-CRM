@@ -50,6 +50,7 @@ const rowToLead = (row: any): Lead => ({
   utmTerm: row.utm_term ?? null,
   adId: row.ad_id ?? null,
   referrer: row.referrer ?? null,
+  referredByLeadId: row.referred_by_lead_id ?? null,
 });
 
 export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -113,6 +114,7 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         utm_term: lead.utmTerm ?? undefined,
         ad_id: lead.adId ?? undefined,
         referrer: lead.referrer ?? undefined,
+        referred_by_lead_id: lead.referredByLeadId ?? undefined,
       } as any)
       .select()
       .single();
@@ -145,6 +147,7 @@ export const LeadsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if ((updates as any).lossReason !== undefined) dbUpdates.loss_reason = (updates as any).lossReason;
     if (updates.channel !== undefined) dbUpdates.channel = updates.channel;
     if (updates.source !== undefined) dbUpdates.source = updates.source;
+    if ((updates as any).referredByLeadId !== undefined) dbUpdates.referred_by_lead_id = (updates as any).referredByLeadId;
 
     const { error } = await supabase.from("leads").update(dbUpdates).eq("id", id).eq("company_id", activeCompanyId);
     if (error) throw error;
