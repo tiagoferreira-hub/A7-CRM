@@ -10,6 +10,7 @@ interface AppointmentsContextType {
     leadId: string;
     assignedTo?: string | null;
     scheduledAt: string;
+    durationMinutes?: number;
     type: AppointmentType;
     status?: AppointmentStatus;
     notes?: string;
@@ -32,6 +33,7 @@ const rowToAppt = (r: any): Appointment => ({
   leadId: r.lead_id,
   assignedTo: r.assigned_to,
   scheduledAt: r.scheduled_at,
+  durationMinutes: r.duration_minutes ?? 60,
   type: r.appointment_type,
   status: r.status,
   notes: r.notes ?? "",
@@ -68,6 +70,7 @@ export const AppointmentsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         lead_id: a.leadId,
         assigned_to: a.assignedTo ?? user?.id ?? null,
         scheduled_at: a.scheduledAt,
+        duration_minutes: a.durationMinutes ?? 60,
         appointment_type: a.type,
         status: a.status ?? "agendado",
         notes: a.notes ?? "",
@@ -88,6 +91,7 @@ export const AppointmentsProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (updates.leadId !== undefined) db.lead_id = updates.leadId;
     if (updates.assignedTo !== undefined) db.assigned_to = updates.assignedTo;
     if (updates.scheduledAt !== undefined) db.scheduled_at = updates.scheduledAt;
+    if (updates.durationMinutes !== undefined) db.duration_minutes = updates.durationMinutes;
     if (updates.type !== undefined) db.appointment_type = updates.type;
     if (updates.status !== undefined) db.status = updates.status;
     if (updates.notes !== undefined) db.notes = updates.notes;
