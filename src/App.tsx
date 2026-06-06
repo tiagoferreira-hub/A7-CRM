@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ServicesProvider } from "@/context/ServicesContext";
 import { LeadsProvider } from "@/context/LeadsContext";
 import { KeywordRulesProvider } from "@/context/KeywordRulesContext";
+import { ProceduresProvider } from "@/context/ProceduresContext";
 import { TasksProvider } from "@/context/TasksContext";
 import { DocumentsProvider } from "@/context/DocumentsContext";
 import { ConversationsProvider } from "@/context/ConversationsContext";
@@ -61,6 +62,7 @@ const AppRoutes = () => {
     <ServicesProvider>
       <LeadsProvider>
         <KeywordRulesProvider>
+        <ProceduresProvider>
         <TagsProvider>
           <TasksProvider>
             <DocumentsProvider>
@@ -84,6 +86,7 @@ const AppRoutes = () => {
             </DocumentsProvider>
           </TasksProvider>
         </TagsProvider>
+        </ProceduresProvider>
         </KeywordRulesProvider>
       </LeadsProvider>
     </ServicesProvider>
