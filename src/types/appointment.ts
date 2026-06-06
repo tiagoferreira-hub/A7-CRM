@@ -18,11 +18,24 @@ export interface Appointment {
   leadId: string;
   assignedTo: string | null;
   scheduledAt: string;
+  durationMinutes: number;
   type: AppointmentType;
   status: AppointmentStatus;
   notes: string;
   createdAt: string;
 }
+
+export const DURATION_OPTIONS: { value: number; label: string }[] = [
+  { value: 15, label: "15 min" },
+  { value: 30, label: "30 min" },
+  { value: 45, label: "45 min" },
+  { value: 60, label: "1 h" },
+  { value: 90, label: "1 h 30" },
+  { value: 120, label: "2 h" },
+];
+
+// Status que indicam que o horário está livre/encerrado (não ocupam a agenda ativa)
+export const INACTIVE_STATUSES: AppointmentStatus[] = ["cancelado", "nao_compareceu"];
 
 export const APPOINTMENT_TYPE_LABELS: Record<AppointmentType, string> = {
   avaliacao: "Avaliação",
