@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { LeadOrigin, LeadStage, ORIGIN_LABELS, ORIGIN_OPTIONS, STAGE_LABELS, STAGE_ORDER } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
+import { useProcedures } from "@/context/ProceduresContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ServiceBadges from "@/components/crm/ServiceBadges";
 
@@ -11,6 +12,7 @@ interface Props {
 
 const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
   const { addLead, leads } = useLeads();
+  const { procedures } = useProcedures();
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -21,12 +23,12 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
     observations: "",
     stage: "lead_entrou" as LeadStage,
     referredBy: "",
+    procedureInterestId: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone) return;
-    // Se foi indicado e a origem ainda está no padrão, marca como indicação.
     const origin = form.referredBy && form.origin === "manual" ? "indicacao" : form.origin;
     addLead({
       name: form.name,
@@ -40,10 +42,12 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
       lastInteraction: new Date().toISOString(),
       observations: form.observations,
       referredByLeadId: form.referredBy || null,
+      procedureInterestId: form.procedureInterestId || null,
     } as any);
     setForm({
       name: "", phone: "", origin: "manual", services: [],
-      value: "", lastMessage: "", observations: "", stage: "lead_entrou", referredBy: "",
+      value: "", lastMessage: "", observations: "", stage: "lead_entrou",
+      referredBy: "", procedureInterestId: "",
     });
     onClose();
   };
@@ -69,6 +73,13 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
             <label className="text-xs font-medium text-muted-foreground">Origem</label>
             <select className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.origin} onChange={(e) => set("origin", e.target.value)}>
               {ORIGIN_OPTIONS.map((o) => <option key={o} value={o}>{ORIGIN_LABELS[o]}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Procedimento de interesse</label>
+            <select className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" value={form.procedureInterestId} onChange={(e) => set("procedureInterestId", e.target.value)}>
+              <option value="">— Nenhum —</option>
+              {procedures.filter(p => p.active).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
           <div>
@@ -115,4 +126,3 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
 };
 
 export default NewLeadModal;
-
