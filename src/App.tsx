@@ -23,11 +23,17 @@ import Login from "./pages/Login";
 import Landing from "./pages/Landing";
 import OwnerPanel from "./pages/OwnerPanel";
 import NotFound from "./pages/NotFound";
+import Capture from "./pages/Capture";
 
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const { user, role, loading, viewAsCompany } = useAuth();
+
+  // Rota PÚBLICA de captação por indicação — sem login, antes de qualquer gate.
+  if (window.location.pathname.startsWith("/indique/")) {
+    return <Capture />;
+  }
 
   if (loading) {
     return (

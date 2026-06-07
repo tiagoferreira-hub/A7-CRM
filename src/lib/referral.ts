@@ -48,8 +48,8 @@ export function referralSummary(leads: Lead[]): ReferralSummary {
   };
 }
 
-// Link de indicação (v1): o id do indicador em ?ref=. A Edge Function pública (v2)
-// resolverá esse id e gravará referred_by_lead_id no novo lead.
+// Link de indicação (v2): página pública /indique/<id do indicador>, que cadastra
+// o lead indicado via Edge Function capture-lead.
 export function referralLink(origin: string, referrerLeadId: string): string {
-  return `${origin}/?ref=${referrerLeadId}&channel=indicacao`;
+  return `${origin}/indique/${referrerLeadId}`;
 }

@@ -37,7 +37,7 @@ describe("referral metrics", () => {
     expect(s.activeReferrers).toBe(2);
   });
 
-  it("referralLink monta a URL com ?ref e canal", () => {
-    expect(referralLink("https://app.x", "A")).toBe("https://app.x/?ref=A&channel=indicacao");
+  it("referralLink monta a URL pública /indique/<ref>", () => {
+    expect(referralLink("https://app.x", "A")).toBe("https://app.x/indique/A");
   });
 });
