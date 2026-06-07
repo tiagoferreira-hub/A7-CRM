@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useLeads } from "@/context/LeadsContext";
 import { useAppointments } from "@/context/AppointmentsContext";
+import { useProcedures } from "@/context/ProceduresContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import {
   Appointment,
@@ -30,6 +31,7 @@ const labelCls = "text-xs font-medium text-muted-foreground";
 const AppointmentModal: React.FC<Props> = ({ open, onClose, appointment, defaultDate }) => {
   const { leads } = useLeads();
   const { addAppointment, updateAppointment, deleteAppointment } = useAppointments();
+  const { procedures } = useProcedures();
   const members = useCompanyMembers();
   const isEdit = !!appointment;
 
@@ -38,9 +40,17 @@ const AppointmentModal: React.FC<Props> = ({ open, onClose, appointment, default
   const [time, setTime] = useState("09:00");
   const [duration, setDuration] = useState(60);
   const [type, setType] = useState<AppointmentType>("avaliacao");
+  const [procedureId, setProcedureId] = useState("");
   const [assignedTo, setAssignedTo] = useState<string>("");
   const [status, setStatus] = useState<AppointmentStatus>("agendado");
   const [notes, setNotes] = useState("");
+
+  // Ao escolher um procedimento, preenche a duração com o tempo de trabalho dele.
+  const onPickProcedure = (id: string) => {
+    setProcedureId(id);
+    const p = procedures.find((x) => x.id === id);
+    if (p && p.workMinutes) setDuration(p.workMinutes);
+  };
 
   // Carrega os valores quando o modal abre.
   useEffect(() => {
@@ -52,6 +62,7 @@ const AppointmentModal: React.FC<Props> = ({ open, onClose, appointment, default
       setTime(t);
       setDuration(appointment.durationMinutes ?? 60);
       setType(appointment.type);
+      setProcedureId(appointment.procedureId ?? "");
       setAssignedTo(appointment.assignedTo ?? "");
       setStatus(appointment.status);
       setNotes(appointment.notes ?? "");
@@ -61,6 +72,7 @@ const AppointmentModal: React.FC<Props> = ({ open, onClose, appointment, default
       setTime("09:00");
       setDuration(60);
       setType("avaliacao");
+      setProcedureId("");
       setAssignedTo("");
       setStatus("agendado");
       setNotes("");
@@ -78,6 +90,7 @@ const AppointmentModal: React.FC<Props> = ({ open, onClose, appointment, default
         scheduledAt,
         durationMinutes: duration,
         type,
+        procedureId: procedureId || null,
         assignedTo: assignedTo || null,
         status,
         notes,
@@ -88,6 +101,7 @@ const AppointmentModal: React.FC<Props> = ({ open, onClose, appointment, default
         scheduledAt,
         durationMinutes: duration,
         type,
+        procedureId: procedureId || null,
         assignedTo: assignedTo || null,
         notes,
       });
@@ -154,6 +168,24 @@ const AppointmentModal: React.FC<Props> = ({ open, onClose, appointment, default
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className={labelCls}>Procedimento (catálogo)</label>
+            <select className={inputCls} value={procedureId} onChange={(e) => onPickProcedure(e.target.value)}>
+              <option value="">Nenhum / a definir</option>
+              {procedures.filter((p) => p.active).map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            {procedureId && (() => {
+              const p = procedures.find((x) => x.id === procedureId);
+              return p && p.followups.length > 0 ? (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Ao marcar "Compareceu", {p.followups.length} toque(s) de pós-op serão agendados automaticamente.
+                </p>
+              ) : null;
+            })()}
           </div>
 
           <div className="grid grid-cols-2 gap-2">

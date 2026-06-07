@@ -14,6 +14,7 @@ interface AppointmentsContextType {
     type: AppointmentType;
     status?: AppointmentStatus;
     notes?: string;
+    procedureId?: string | null;
   }) => Promise<Appointment | null>;
   updateAppointment: (id: string, updates: Partial<Omit<Appointment, "id" | "createdAt">>) => Promise<void>;
   deleteAppointment: (id: string) => Promise<void>;
@@ -38,6 +39,7 @@ const rowToAppt = (r: any): Appointment => ({
   status: r.status,
   notes: r.notes ?? "",
   createdAt: r.created_at,
+  procedureId: r.procedure_id ?? null,
 });
 
 export const AppointmentsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -74,6 +76,7 @@ export const AppointmentsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         appointment_type: a.type,
         status: a.status ?? "agendado",
         notes: a.notes ?? "",
+        procedure_id: a.procedureId ?? null,
       })
       .select()
       .single();
@@ -95,6 +98,7 @@ export const AppointmentsProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (updates.type !== undefined) db.appointment_type = updates.type;
     if (updates.status !== undefined) db.status = updates.status;
     if (updates.notes !== undefined) db.notes = updates.notes;
+    if (updates.procedureId !== undefined) db.procedure_id = updates.procedureId;
     await (supabase as any).from("appointments").update(db).eq("id", id).eq("company_id", activeCompanyId);
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...updates } as Appointment : a));
   }, [activeCompanyId]);

@@ -23,6 +23,7 @@ export interface Appointment {
   status: AppointmentStatus;
   notes: string;
   createdAt: string;
+  procedureId?: string | null;
 }
 
 export const DURATION_OPTIONS: { value: number; label: string }[] = [
