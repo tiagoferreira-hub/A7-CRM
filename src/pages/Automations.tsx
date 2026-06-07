@@ -7,6 +7,7 @@ import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CAMPAIGN_CHANNEL_LABELS, CAMPAIGN_STATUS_LABELS, CampaignChannel, FLOW_ACTION_LABELS, FLOW_STATUS_LABELS, FLOW_TRIGGER_LABELS, FlowActionType, FlowTriggerType } from "@/types/automations";
 import { Zap, Plus, Check, Trash2, Pause, Play, Mail, MessageCircle, Workflow } from "lucide-react";
+import RemindersCard from "@/components/crm/RemindersCard";
 
 const fmtDateTime = (iso: string) => new Date(iso).toLocaleString("pt-BR", {
   day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
@@ -173,6 +174,7 @@ const Automations: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl mx-auto w-full">
         {tab === "followups" && (
           <>
+            <RemindersCard />
             <Section title="Atrasados" items={overdue} tone="text-rose-600 dark:text-rose-400" />
             <Section title="Hoje" items={today} tone="text-primary" />
             <Section title="Próximos" items={upcoming} />
