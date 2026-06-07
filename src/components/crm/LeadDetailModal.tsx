@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import LossReasonModal from "./LossReasonModal";
 import StageStepper from "./StageStepper";
 import ServiceBadges from "./ServiceBadges";
+import ReactivationCard from "./ReactivationCard";
+import { useProcedures } from "@/context/ProceduresContext";
 import { useConversations } from "@/context/ConversationsContext";
 import { useWaitingTime, waitingTierClasses } from "@/hooks/useWaitingTime";
 import {
@@ -75,6 +77,7 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
   const navigate = useNavigate();
   const { updateLead, moveLead } = useLeads();
   const { services } = useServices();
+  const { procedures } = useProcedures();
   const { appointments } = useAppointments();
   const { followUps, addFollowUp } = useFollowUps();
   const { tags, createTag, assignTag, unassignTag, tagsForLead } = useTags();
@@ -271,6 +274,8 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                     </div>
                   </div>
 
+                  <ReactivationCard lead={lead} />
+
                   <div>
                     <SectionLabel>Tags</SectionLabel>
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -444,6 +449,18 @@ const LeadDetailModal: React.FC<Props> = ({ lead, open, onClose }) => {
                         className="w-full h-10 text-sm border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring">
                         <option value="">Sem responsável</option>
                         {members.map(m => <option key={m.userId} value={m.userId}>{m.displayName}</option>)}
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs font-medium text-foreground mb-1.5 block">Procedimento de interesse</label>
+                      <select
+                        value={(form as any).procedureInterestId ?? lead.procedureInterestId ?? ""}
+                        onChange={(e) => setForm({ ...form, procedureInterestId: e.target.value || null } as any)}
+                        className="w-full h-10 text-sm border border-input rounded-lg px-3 bg-background focus:outline-none focus:ring-1 focus:ring-ring">
+                        <option value="">— Nenhum —</option>
+                        {procedures.filter(p => p.active).map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
                       </select>
                     </div>
                   </div>

@@ -3,11 +3,12 @@ import { Lead, ORIGIN_LABELS, LeadStage, CHANNEL_LABELS } from "@/types/lead";
 import { useLeads } from "@/context/LeadsContext";
 import { useTags } from "@/context/TagsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
+import { useProcedures } from "@/context/ProceduresContext";
 import StageStepper from "./StageStepper";
 import ServiceBadges from "./ServiceBadges";
 import { useConversations } from "@/context/ConversationsContext";
 import { useWaitingTime, waitingTierClasses } from "@/hooks/useWaitingTime";
-import { Phone, MessageSquare, Pencil, Check, X, User, Clock } from "lucide-react";
+import { Phone, MessageSquare, Pencil, Check, X, User, Clock, Stethoscope } from "lucide-react";
 
 interface LeadCardProps {
   lead: Lead;
@@ -43,9 +44,13 @@ const channelColors: Record<string, string> = {
 const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
   const { updateLead, moveLead } = useLeads();
   const { tagsForLead } = useTags();
+  const { procedures } = useProcedures();
   const { conversations } = useConversations();
   const members = useCompanyMembers();
   const assignee = lead.assignedTo ? members.find(m => m.userId === lead.assignedTo) : null;
+  const procedureInterest = lead.procedureInterestId
+    ? procedures.find(p => p.id === lead.procedureInterestId)
+    : null;
   const leadTags = tagsForLead(lead.id);
   const services = lead.services ?? (lead.service ? [lead.service] : []);
   const conv = conversations.find(c => c.leadId === lead.id);
@@ -176,6 +181,13 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
         <div className={`mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${waitTier.bg} ${waitTier.text}`}>
           <Clock className="w-3 h-3" />
           {waiting.label}
+        </div>
+      )}
+
+      {procedureInterest && (
+        <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 max-w-full">
+          <Stethoscope className="w-3 h-3 shrink-0" />
+          <span className="truncate">{procedureInterest.name}</span>
         </div>
       )}
 

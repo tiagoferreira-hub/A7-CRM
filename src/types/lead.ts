@@ -58,6 +58,8 @@ export interface Lead {
   referrer?: string | null;
   // Programa de indicação: lead/cliente que indicou este lead
   referredByLeadId?: string | null;
+  // D2 — procedimento pelo qual o lead demonstrou interesse (antes de agendar)
+  procedureInterestId?: string | null;
 }
 
 export const STAGE_LABELS: Record<LeadStage, string> = {
