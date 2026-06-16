@@ -9,6 +9,7 @@ import ServiceBadges from "./ServiceBadges";
 import { useConversations } from "@/context/ConversationsContext";
 import { useWaitingTime, waitingTierClasses } from "@/hooks/useWaitingTime";
 import { Phone, MessageSquare, Pencil, Check, X, User, Clock, Stethoscope } from "lucide-react";
+import { computeLeadScore, scoreLabel } from "@/lib/leadScore";
 
 interface LeadCardProps {
   lead: Lead;
@@ -191,8 +192,19 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, onOpenDetail }) => {
         </div>
       )}
 
-      <div className="text-[10px] text-muted-foreground mt-1.5 text-right">
-        {formatDate(lead.lastInteraction)}
+      <div className="flex items-center justify-between mt-1.5">
+        {(() => {
+          const score = computeLeadScore(lead);
+          const sl = scoreLabel(score);
+          return (
+            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${sl.color}`}>
+              {sl.label} {score}
+            </span>
+          );
+        })()}
+        <span className="text-[10px] text-muted-foreground">
+          {formatDate(lead.lastInteraction)}
+        </span>
       </div>
     </div>
   );
