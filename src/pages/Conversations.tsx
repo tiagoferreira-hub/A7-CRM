@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useConversations, Message } from "@/context/ConversationsContext";
 import { useLeads } from "@/context/LeadsContext";
+import { usePlaybooks } from "@/context/PlaybooksContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTasks } from "@/context/TasksContext";
 import { useAppointments } from "@/context/AppointmentsContext";
@@ -46,13 +47,7 @@ const formatTime = (iso: string) => {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 };
 
-const AI_SUGGESTIONS = [
-  "Claro! Qual procedimento você deseja fazer?",
-  "Posso te ajudar. É sua primeira vez na clínica?",
-  "Tem preferência de horário para agendar?",
-  "Posso te enviar nossos valores e disponibilidades agora?",
-  "Você prefere atendimento pela manhã ou à tarde?",
-];
+// AI_SUGGESTIONS is now dynamic — derived from active scripts below.
 
 const channelIcon = (channel?: string) => {
   if (channel === "instagram") return <Instagram className="w-3 h-3" />;
@@ -67,6 +62,7 @@ interface ConversationsProps {
 const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingHandled }) => {
   const { conversations, loadMessages, sendMessage, markRead, assignConversation, setConversationStatus } = useConversations();
   const { leads, updateLead } = useLeads();
+  const { scripts, recordUsage } = usePlaybooks();
   const { user, role } = useAuth();
   const { addTask } = useTasks();
   const { addAppointment, appointments } = useAppointments();
@@ -172,6 +168,15 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
 
   const selected = selectedId ? conversations.find(c => c.id === selectedId) : null;
   const selectedLead = selected ? leadById[selected.leadId] : null;
+
+  // Sugestões dinâmicas: blocos do script ativo para a etapa do lead selecionado.
+  const { aiSuggestions, activeScriptName } = useMemo(() => {
+    if (!selectedLead) return { aiSuggestions: [], activeScriptName: null };
+    const script = scripts.find(s => s.isActive && s.stage === selectedLead.stage);
+    if (!script) return { aiSuggestions: [], activeScriptName: null };
+    const blocks = script.content.split(/\n\n+/).filter(Boolean).slice(0, 5);
+    return { aiSuggestions: blocks, activeScriptName: script.name };
+  }, [scripts, selectedLead]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -319,7 +324,13 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
             <SectionHeader label="AI Agents" open={expandedAI} onToggle={() => setExpandedAI(v => !v)} icon={<Bot className="w-3 h-3" />} />
             {expandedAI && (
               <div className="space-y-0.5">
-                <NavItem label="Assistente Comercial IA" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
+                <NavItem
+                  label="Assistente Comercial IA"
+                  icon={<Sparkles className="w-3.5 h-3.5" />}
+                  count={counters.awaiting}
+                  active={activeInbox === "awaiting"}
+                  onClick={() => { setActiveInbox("awaiting"); setActiveStage(null); }}
+                />
                 <NavItem label="SDR IA" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
                 <NavItem label="Follow-up IA" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
               </div>
@@ -578,16 +589,23 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
                 </button>
               </div>
               {aiOpen && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {AI_SUGGESTIONS.map((s, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSuggestionClick(s)}
-                      className="text-[11px] px-2.5 py-1.5 rounded-full bg-background border border-border text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors"
-                    >
-                      {s}
-                    </button>
-                  ))}
+                <div className="mt-2">
+                  {activeScriptName && (
+                    <p className="text-[10px] text-muted-foreground mb-1.5">Script: {activeScriptName}</p>
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {aiSuggestions.length > 0 ? aiSuggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSuggestionClick(s)}
+                        className="text-[11px] px-2.5 py-1.5 rounded-full bg-background border border-border text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors text-left"
+                      >
+                        {s.length > 80 ? s.slice(0, 78) + "..." : s}
+                      </button>
+                    )) : (
+                      <p className="text-[11px] text-muted-foreground">Nenhum script ativo para esta etapa.</p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
