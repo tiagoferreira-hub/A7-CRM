@@ -209,9 +209,11 @@ describe("defaultOpenSections", () => {
 // ── Trava contra divergência: o mesmo mapeamento vive em TS e em SQL ─────────
 describe("SQL e TS contam a mesma história", () => {
   const root = process.cwd();
-  const migration = fs.readFileSync(
-    path.join(root, "supabase/migrations/20260929120000_script_moments.sql"), "utf8");
-  const seed = fs.readFileSync(path.join(root, "supabase/seeds/luminae_playbook.sql"), "utf8");
+  // No Windows o git faz checkout com \r\n (core.autocrlf); os regex abaixo usam \n.
+  // Sem normalizar, o seed "some" (0 linhas lidas) só na máquina Windows.
+  const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8").replace(/\r\n/g, "\n");
+  const migration = read("supabase/migrations/20260929120000_script_moments.sql");
+  const seed = read("supabase/seeds/luminae_playbook.sql");
 
   const caseMap = (fnName: string) => {
     const start = migration.indexOf(`FUNCTION public.${fnName}`);

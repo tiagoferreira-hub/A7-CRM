@@ -45,7 +45,10 @@ const Index: React.FC = () => {
   return (
     <div className="flex h-screen bg-background w-full">
       <AppSidebar tab={tab} setTab={setTab} />
-      <main className="flex-1 overflow-hidden">
+      {/* overflow-y-auto: páginas sem rolagem própria (Configurações, Tarefas...) rolam aqui.
+          As que controlam a própria rolagem (Kanban, Conversas) ocupam h-full e não geram
+          barra extra. min-w-0 deixa o conteúdo encolher dentro do flex. */}
+      <main className="flex-1 min-w-0 overflow-y-auto">
         {tab === "home" && isSeller && <SellerDashboard />}
         {tab === "lifecycle" && <KanbanBoard />}
         {tab === "conversations" && (

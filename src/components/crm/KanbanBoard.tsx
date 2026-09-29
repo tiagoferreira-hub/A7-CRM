@@ -3,7 +3,7 @@ import { useLeads } from "@/context/LeadsContext";
 import { useTags } from "@/context/TagsContext";
 import { useFollowUps } from "@/context/FollowUpsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
-import { Lead, LeadOrigin, LeadStage, LeadChannel, STAGE_ORDER, ORIGIN_LABELS, ORIGIN_OPTIONS, STAGE_LABELS, CHANNEL_LABELS, CHANNEL_OPTIONS } from "@/types/lead";
+import { Lead, LeadOrigin, LeadStage, LeadChannel, STAGE_ALL, ORIGIN_LABELS, ORIGIN_OPTIONS, STAGE_LABELS, CHANNEL_LABELS, CHANNEL_OPTIONS } from "@/types/lead";
 import KanbanColumn from "./KanbanColumn";
 import LeadDetailModal from "./LeadDetailModal";
 import NewLeadModal from "./NewLeadModal";
@@ -59,7 +59,7 @@ const KanbanBoard: React.FC = () => {
 
   const leadsByStage = useMemo(() => {
     const map: Record<LeadStage, Lead[]> = {} as any;
-    STAGE_ORDER.forEach((s) => (map[s] = []));
+    STAGE_ALL.forEach((s) => (map[s] = []));
     filtered.forEach((l) => map[l.stage]?.push(l));
     return map;
   }, [filtered]);
@@ -113,7 +113,7 @@ const KanbanBoard: React.FC = () => {
           <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
             value={filterStage} onChange={(e) => setFilterStage(e.target.value as LeadStage | "")}>
             <option value="">Todas as etapas</option>
-            {STAGE_ORDER.map((s) => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
+            {STAGE_ALL.map((s) => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
           </select>
           <select className="text-sm border border-input rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
             value={filterAssignee} onChange={(e) => setFilterAssignee(e.target.value)}>
@@ -140,7 +140,7 @@ const KanbanBoard: React.FC = () => {
       {/* Kanban */}
       <div className="flex-1 overflow-x-auto px-4 py-4">
         <div className="flex gap-3 min-w-max">
-          {STAGE_ORDER.map((stage) => (
+          {STAGE_ALL.map((stage) => (
             <KanbanColumn
               key={stage}
               stage={stage}
