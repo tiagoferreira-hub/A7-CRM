@@ -1,12 +1,11 @@
-import React, { useMemo, useState } from "react";
-import { UserRound, Phone, Paperclip, Clock, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon, BookOpen, Copy } from "lucide-react";
+import React, { useMemo } from "react";
+import { UserRound, Phone, Paperclip, Clock, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon, BookOpen } from "lucide-react";
 import { Lead, LeadStage, STAGE_LABELS, ORIGIN_LABELS } from "@/types/lead";
 import { Conversation, Message } from "@/context/ConversationsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { useTags } from "@/context/TagsContext";
 import { useLeadHistory } from "@/hooks/useLeadHistory";
-import { useScriptPanel } from "@/hooks/useScriptPanel";
-import { tokenizeTemplate } from "@/lib/scriptTemplate";
+import ScriptPanel from "@/components/crm/ScriptPanel";
 import ServiceBadges from "@/components/crm/ServiceBadges";
 import { cn } from "@/lib/utils";
 
@@ -40,11 +39,6 @@ const ConversationRightSidebar: React.FC<Props> = ({
   const members = useCompanyMembers();
   const { tagsForLead } = useTags();
   const history = useLeadHistory(lead?.id);
-  const {
-    scripts, activeScript, overrideId: scriptOverrideId,
-    setOverrideId: setScriptOverrideId, blocks: scriptBlocks, vars: scriptVars, insertBlock,
-  } = useScriptPanel(lead, conversation);
-
 
   const owner = lead?.assignedTo ? members.find(m => m.userId === lead.assignedTo) : null;
   const leadTags = lead ? tagsForLead(lead.id) : [];
@@ -87,25 +81,6 @@ const ConversationRightSidebar: React.FC<Props> = ({
     { key: "activities", icon: Clock, label: "Atividades" },
     { key: "script", icon: BookOpen, label: "Script" },
   ];
-
-  /** Bloco renderizado com as variáveis resolvidas; as vazias ficam destacadas. */
-  const ScriptBlockText: React.FC<{ block: string }> = ({ block }) => (
-    <p className="text-xs text-foreground whitespace-pre-wrap">
-      {tokenizeTemplate(block, scriptVars).map((seg, i) =>
-        seg.kind === "missing" ? (
-          <mark
-            key={i}
-            title="Variável sem valor — preencha antes de enviar"
-            className="bg-crm-warning-light text-crm-warning font-medium rounded px-0.5"
-          >
-            {seg.text}
-          </mark>
-        ) : (
-          <React.Fragment key={i}>{seg.text}</React.Fragment>
-        )
-      )}
-    </p>
-  );
 
 
   const handleClick = (k: RightPanelKey) => {
@@ -272,57 +247,7 @@ const ConversationRightSidebar: React.FC<Props> = ({
             )}
 
             {activePanel === "script" && (
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 block">Script</label>
-                  <select
-                    value={activeScript?.id ?? ""}
-                    onChange={e => setScriptOverrideId(e.target.value || null)}
-                    className="w-full text-xs border border-input rounded-md px-2 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-                  >
-                    <option value="">— Ativo da etapa —</option>
-                    {scripts.map(s => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} {s.isActive ? "•" : ""} ({STAGE_LABELS[s.stage]})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {!activeScript ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    <p className="text-xs">Nenhum script ativo para esta etapa</p>
-                    <button
-                      onClick={() => window.dispatchEvent(new CustomEvent("crm:navigate", { detail: { tab: "playbooks" } }))}
-                      className="text-[11px] text-primary hover:underline mt-2"
-                    >
-                      Criar em Playbooks → Scripts
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-sm font-semibold text-foreground mb-2">{activeScript.name}</p>
-                    {scriptBlocks.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">Script sem conteúdo.</p>
-                    ) : (
-                      <ul className="space-y-2">
-                        {scriptBlocks.map((block, i) => (
-                          <li key={i} className="bg-muted/40 border border-border rounded-md p-2 group">
-                            <ScriptBlockText block={block} />
-                            <button
-                              onClick={() => insertBlock(block)}
-                              className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-                            >
-                              <Copy className="w-3 h-3" /> Usar
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
-              </div>
+              <ScriptPanel lead={lead} conversation={conversation} messages={messages} />
             )}
 
           </div>

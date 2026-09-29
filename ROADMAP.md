@@ -39,6 +39,14 @@ e **diagnosticar** (auditoria por IA).
   O usuário faz o merge (Create PR → Merge → Confirm).
   `supabase db push` e `functions deploy` são permitidos ao assistente.
 - Migrations são aditivas e podem ser aplicadas antes do merge; o código só as usa após o merge.
+- **⚠️ Não editar o projeto pelo Lovable.** Em 28/09/2026 o Lovable commitou direto na `main`
+  e trocou o `.env` para o banco antigo dele (`bfacebuqwkpsaiyyuywm`, usado até jun/2026, sem
+  as tabelas de F2 em diante). O site ficou no banco errado até a correção. O banco oficial é
+  **`xydhsjngwwsyqehpdhcf`**. Se o `.env` aparecer com outro ID num PR, é esse problema de novo.
+- **Supabase gratuito pausa por inatividade.** Em set/2026 o projeto estava pausado e o endereço
+  sumiu do DNS; reativar pelo painel do Supabase (Restore) resolveu, com os dados intactos.
+- **Branch de PR empilhado:** um PR aberto com base em outra branch entra NESSA branch, não na
+  `main`. O PR #14 entrou só na branch do painel e precisou de um segundo merge.
 
 ---
 

@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from "react";
-import { usePlaybooks, Playbook, PlaybookSection, PlaybookFlowNode, PlaybookViewMode, Script } from "@/context/PlaybooksContext";
+import { usePlaybooks, Playbook, PlaybookSection, PlaybookFlowNode, PlaybookViewMode, Script, ScriptInput } from "@/context/PlaybooksContext";
 import { useLeads } from "@/context/LeadsContext";
 import { STAGE_ALL, STAGE_LABELS, LeadStage } from "@/types/lead";
+import { ALL_MOMENTS, MOMENT_LABELS, ScriptMoment, homeStageOf } from "@/lib/scriptMoments";
 import { BookOpen, Plus, ChevronLeft, FileText, GitBranch, Trash2, Pencil, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -292,7 +293,7 @@ const ScriptsList: React.FC = () => {
           <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
             <tr>
               <th className="text-left px-4 py-2.5">Nome</th>
-              <th className="text-left px-4 py-2.5">Etapa</th>
+              <th className="text-left px-4 py-2.5">Momento</th>
               <th className="text-left px-4 py-2.5">Status</th>
               <th className="text-left px-4 py-2.5">Usos</th>
               <th className="text-left px-4 py-2.5">Conversão</th>
@@ -307,7 +308,7 @@ const ScriptsList: React.FC = () => {
             {rows.map(s => (
               <tr key={s.id} className="border-t border-border hover:bg-accent/40">
                 <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
-                <td className="px-4 py-3 text-foreground">{STAGE_LABELS[s.stage]}</td>
+                <td className="px-4 py-3 text-foreground">{MOMENT_LABELS[s.moment]}</td>
                 <td className="px-4 py-3">
                   <button onClick={() => toggleScriptActive(s.id, !s.isActive)}
                     className={`text-[11px] font-medium px-2 py-1 rounded-full ${s.isActive ? "bg-crm-success-light text-crm-success" : "bg-muted text-muted-foreground"}`}>
@@ -333,7 +334,7 @@ const ScriptsList: React.FC = () => {
         script={editId ? scripts.find(s => s.id === editId) ?? null : null}
         onSave={async (data) => {
           if (editId) await updateScript(editId, data);
-          else await createScript(data as any);
+          else await createScript(data);
         }}
         onToggle={async (active) => { if (editId) await toggleScriptActive(editId, active); }}
       />
@@ -344,26 +345,32 @@ const ScriptsList: React.FC = () => {
 const ScriptEditModal: React.FC<{
   open: boolean; onClose: () => void;
   script: Script | null;
-  onSave: (data: Partial<Script>) => Promise<void>;
+  onSave: (data: ScriptInput) => Promise<void>;
   onToggle: (active: boolean) => Promise<void>;
 }> = ({ open, onClose, script, onSave, onToggle }) => {
   const [name, setName] = useState("");
-  const [stage, setStage] = useState<LeadStage>("lead_entrou");
+  const [moment, setMoment] = useState<ScriptMoment>("primeira_resposta");
+  const [triggersText, setTriggersText] = useState("");
   const [content, setContent] = useState("");
   const [isActive, setIsActive] = useState(false);
 
   React.useEffect(() => {
     if (open) {
       setName(script?.name ?? "");
-      setStage(script?.stage ?? "lead_entrou");
+      setMoment(script?.moment ?? "primeira_resposta");
+      setTriggersText((script?.triggers ?? []).join("\n"));
       setContent(script?.content ?? "");
       setIsActive(script?.isActive ?? false);
     }
   }, [open, script]);
 
+  const isObjection = moment === "objecao";
+  const homeStage = homeStageOf(moment);
+
   const handleSave = async () => {
     if (!name.trim()) return;
-    await onSave({ name: name.trim(), stage, content, isActive });
+    const triggers = isObjection ? triggersText.split(/[\n,]/).map(t => t.trim()).filter(Boolean) : [];
+    await onSave({ name: name.trim(), moment, triggers, content, isActive });
     onClose();
   };
 
@@ -378,21 +385,40 @@ const ScriptEditModal: React.FC<{
               className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Etapa vinculada</label>
-            <select value={stage} onChange={e => setStage(e.target.value as LeadStage)}
+            <label className="text-xs font-medium text-muted-foreground">Momento do atendimento</label>
+            <select value={moment} onChange={e => setMoment(e.target.value as ScriptMoment)}
               className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring">
-              {STAGE_ALL.map(s => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
+              {ALL_MOMENTS.map(m => <option key={m} value={m}>{MOMENT_LABELS[m]}</option>)}
             </select>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {isObjection
+                ? "Vale em qualquer etapa e não muda a etapa do lead. Aparece em destaque quando a paciente usa uma das frases abaixo."
+                : `Etapa do funil: ${homeStage ? STAGE_LABELS[homeStage] : "—"}.`}
+              {moment === "no_show" && " Aparece quando o agendamento do lead está como “Não compareceu”."}
+            </p>
           </div>
+          {isObjection && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Frases da paciente que disparam (uma por linha)</label>
+              <textarea value={triggersText} onChange={e => setTriggersText(e.target.value)} rows={3}
+                placeholder={"vou pensar\ndepois eu vejo"}
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none font-mono" />
+            </div>
+          )}
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Conteúdo (separe blocos com linha em branco)</label>
+            <label className="text-xs font-medium text-muted-foreground">Conteúdo</label>
             <textarea value={content} onChange={e => setContent(e.target.value)} rows={8}
-              placeholder="Olá, tudo bem? Sou da clínica X...&#10;&#10;Posso te ajudar com..."
+              placeholder={"# Título da seção (não é enviado)\n\nPrimeira mensagem\n\nSegunda mensagem"}
               className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none font-mono" />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Linha em branco separa mensagens. Linha começando com <code>#</code> é título de seção — organiza o painel e nunca é enviada.
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <input id="active" type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="w-4 h-4" />
-            <label htmlFor="active" className="text-sm text-foreground">Ativar (substitui o ativo atual da etapa)</label>
+            <label htmlFor="active" className="text-sm text-foreground">
+              {isObjection ? "Ativar" : "Ativar (substitui o ativo atual deste momento)"}
+            </label>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={onClose} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>
@@ -429,7 +455,7 @@ const ResultsList: React.FC = () => {
         <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
           <tr>
             <th className="text-left px-4 py-2.5">Script</th>
-            <th className="text-left px-4 py-2.5">Etapa</th>
+            <th className="text-left px-4 py-2.5">Momento</th>
             <th className="text-left px-4 py-2.5">Status</th>
             <th className="text-left px-4 py-2.5">Usos</th>
             <th className="text-left px-4 py-2.5">Conversão</th>
@@ -443,7 +469,7 @@ const ResultsList: React.FC = () => {
           {rows.map(s => (
             <tr key={s.id} className="border-t border-border">
               <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
-              <td className="px-4 py-3 text-foreground">{STAGE_LABELS[s.stage]}</td>
+              <td className="px-4 py-3 text-foreground">{MOMENT_LABELS[s.moment]}</td>
               <td className="px-4 py-3">
                 <span className={`text-[11px] font-medium px-2 py-1 rounded-full ${s.isActive ? "bg-crm-success-light text-crm-success" : "bg-muted text-muted-foreground"}`}>
                   {s.isActive ? "Ativo" : "Inativo"}
