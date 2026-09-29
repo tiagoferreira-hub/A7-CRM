@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConversations, Message } from "@/context/ConversationsContext";
 import { useLeads } from "@/context/LeadsContext";
 import { useAuth } from "@/context/AuthContext";
@@ -16,7 +16,7 @@ import {
 import LeadDetailModal from "@/components/crm/LeadDetailModal";
 import StageStepper from "@/components/crm/StageStepper";
 import ConversationRightSidebar, { RightPanelKey } from "@/components/crm/ConversationRightSidebar";
-import { SCRIPT_INSERT_EVENT } from "@/hooks/useScriptPanel";
+import { SCRIPT_INSERT_EVENT, SCRIPT_SEND_EVENT } from "@/hooks/useScriptPanel";
 import { useWaitingTime, waitingTierClasses } from "@/hooks/useWaitingTime";
 
 const WaitingBadge: React.FC<{ since: string }> = ({ since }) => {
@@ -72,6 +72,7 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [search, setSearch] = useState("");
   const [activeInbox, setActiveInbox] = useState<InboxKey>("all");
   const [activeStage, setActiveStage] = useState<LeadStage | null>(null);
@@ -183,22 +184,39 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
     }
   }, [pendingLeadId, conversations, onPendingHandled]);
 
+  // Painel de script → "Editar"/"Preencher": texto vai para o campo, com foco nele.
   useEffect(() => {
     const handler = (e: Event) => {
       const ce = e as CustomEvent<{ text: string }>;
       if (!ce.detail?.text) return;
       setInput(prev => prev ? prev + (prev.endsWith("\n") ? "" : "\n") + ce.detail.text : ce.detail.text);
+      requestAnimationFrame(() => inputRef.current?.focus());
     };
     window.addEventListener(SCRIPT_INSERT_EVENT, handler);
     return () => window.removeEventListener(SCRIPT_INSERT_EVENT, handler);
   }, []);
 
+  // Único caminho de envio: botão Enviar do campo e "Enviar" do painel de script.
+  const sendText = useCallback(async (text: string) => {
+    if (!selectedId || !text.trim()) return false;
+    const msg = await sendMessage(selectedId, text);
+    if (msg) setMessages(prev => [...prev, msg]);
+    return !!msg;
+  }, [selectedId, sendMessage]);
+
+  // Painel de script → "Enviar": manda na conversa aberta, sem mexer no que
+  // estiver digitado no campo.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ text: string }>;
+      if (ce.detail?.text) sendText(ce.detail.text);
+    };
+    window.addEventListener(SCRIPT_SEND_EVENT, handler);
+    return () => window.removeEventListener(SCRIPT_SEND_EVENT, handler);
+  }, [sendText]);
 
   const handleSend = async () => {
-    if (!selectedId || !input.trim()) return;
-    const msg = await sendMessage(selectedId, input);
-    if (msg) setMessages(prev => [...prev, msg]);
-    setInput("");
+    if (await sendText(input)) setInput("");
   };
 
   const leadAppointments = useMemo(
@@ -550,12 +568,16 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
             </div>
 
             <footer className="border-t border-border bg-card p-3 flex gap-2">
-              <input
+              {/* textarea, não input: mensagens do script têm várias linhas (PIX, dados)
+                  e <input> apaga quebras de linha. Enter envia; Shift+Enter quebra linha. */}
+              <textarea
+                ref={inputRef}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                 placeholder="Digite uma mensagem..."
-                className="flex-1 rounded-md bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground border-0 focus:outline-none focus:ring-1 focus:ring-ring"
+                rows={Math.min(5, Math.max(1, input.split("\n").length))}
+                className="flex-1 resize-none rounded-md bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground border-0 focus:outline-none focus:ring-1 focus:ring-ring"
               />
               <button
                 onClick={handleSend}

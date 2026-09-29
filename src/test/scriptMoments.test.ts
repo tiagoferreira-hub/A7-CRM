@@ -2,10 +2,11 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import {
-  ALL_MOMENTS, FUNNEL_MOMENTS, MOMENT_HOME_STAGE, ScriptMoment,
-  defaultOpenSections, detectObjections, homeStageOf, legacyMomentFromStage,
-  matchesPhrase, parseScriptSections, resolveMoment,
+  ALL_MOMENTS, FUNNEL_MOMENTS, GENERIC_TRILHA, MOMENT_HOME_STAGE, ScriptMoment, StepLike,
+  defaultOpenSections, detectObjections, filterByTrilha, homeStageOf, legacyMomentFromStage,
+  matchesPhrase, nextPosition, parseScriptSections, pickTrilha, resolveMoment, stepsForMoment, trilhasOf,
 } from "@/lib/scriptMoments";
+import { splitBlocks } from "@/lib/scriptTemplate";
 import { LeadStage, STAGE_ALL } from "@/types/lead";
 import { Appointment, AppointmentStatus } from "@/types/appointment";
 
@@ -236,19 +237,124 @@ describe("SQL e TS contam a mesma história", () => {
     expect(listed.sort()).toEqual([...ALL_MOMENTS].sort());
   });
 
-  it("cada script do seed usa um momento válido e a etapa-mãe certa", () => {
-    const rows = [...seed.matchAll(/^\s+\('((?:[^']|'')*)', '(\w+)', (?:'(\w+)'|NULL::text), /gm)];
-    expect(rows.length).toBeGreaterThan(0);
-    for (const [, name, moment, stage] of rows) {
-      expect(ALL_MOMENTS, name).toContain(moment);
-      expect(stage ?? null, name).toBe(homeStageOf(moment as ScriptMoment));
+  // Cada linha do seed: (nome, momento, etapa, trilha, ordem, gatilhos, $txt$conteúdo$txt$)
+  const unq = (s?: string) => (s === undefined ? null : s.replace(/''/g, "'"));
+  const seedSteps = [...seed.matchAll(
+    /^\s+\('((?:[^']|'')*)', '(\w+)', (?:'(\w+)'|NULL::text), (?:'((?:[^']|'')*)'|NULL::text), (\d+), (?:ARRAY\[[^\n]*?\]::text\[\]|'\{\}'::text\[\]),\n\$txt\$([\s\S]*?)\$txt\$\)/gm,
+  )].map(m => ({
+    name: unq(m[1]) as string, moment: m[2] as ScriptMoment, stage: m[3] ?? null,
+    trilha: unq(m[4]), position: Number(m[5]), content: m[6],
+  }));
+
+  it("o seed foi lido (se o formato mudar, este teste avisa)", () => {
+    expect(seedSteps.length).toBeGreaterThan(50);
+  });
+
+  it("cada passo do seed usa um momento válido e a etapa-mãe certa", () => {
+    for (const s of seedSteps) {
+      expect(ALL_MOMENTS, s.name).toContain(s.moment);
+      expect(s.stage, s.name).toBe(homeStageOf(s.moment));
     }
   });
 
-  it("o seed cobre os momentos do documento da clínica + objeções", () => {
-    const moments = new Set([...seed.matchAll(/^\s+\('(?:[^']|'')*', '(\w+)', /gm)].map(m => m[1]));
-    for (const m of ["primeira_resposta", "agendamento", "pre_comparecimento", "no_show", "objecao"]) {
-      expect(moments.has(m), m).toBe(true);
+  it("nomes únicos (o seed atualiza por nome) e ordem única dentro do momento", () => {
+    expect(new Set(seedSteps.map(s => s.name)).size).toBe(seedSteps.length);
+    const keys = seedSteps.map(s => `${s.moment}#${s.position}`);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("cada passo tem mensagem e nenhuma é título '#'", () => {
+    for (const s of seedSteps) {
+      const blocks = splitBlocks(s.content);
+      expect(blocks.length, s.name).toBeGreaterThan(0);
+      expect(blocks.some(b => b.startsWith("#")), s.name).toBe(false);
     }
+  });
+
+  it("trilha só existe na primeira resposta, e a genérica bate com o código", () => {
+    const withTrilha = seedSteps.filter(s => s.trilha);
+    expect(withTrilha.every(s => s.moment === "primeira_resposta")).toBe(true);
+    expect(trilhasOf(withTrilha as StepLike[] & typeof withTrilha)).toContain(GENERIC_TRILHA);
+  });
+
+  it("o seed cobre os momentos do documento da clínica + objeções", () => {
+    const moments = new Set(seedSteps.map(s => s.moment));
+    for (const m of ["primeira_resposta", "agendamento", "pre_comparecimento", "no_show", "objecao"]) {
+      expect(moments.has(m as ScriptMoment), m).toBe(true);
+    }
+  });
+
+  it("os scripts antigos de 'tudo num bloco' saem do painel e nenhum passo novo usa o nome deles", () => {
+    const legacy = ["1ª Resposta — Diagnóstico", "Agendamento — Condução",
+      "Confirmação D-1 + Lembrete", "Recuperação No-show"];
+    const deactivate = seed.slice(seed.indexOf("SET is_active = false"));
+    for (const name of legacy) {
+      expect(deactivate, name).toContain(`'${name}'`);
+      expect(seedSteps.some(s => s.name === name), name).toBe(false);
+    }
+  });
+
+  it("o seed grava sem \\r (conteúdo colado no Windows)", () => {
+    expect(seed).toContain("replace(r.content, chr(13), '')");
+  });
+});
+
+describe("passos: vários scripts por momento", () => {
+  const step = (name: string, moment: ScriptMoment, position: number, over: Partial<StepLike> = {}): StepLike =>
+    ({ name, moment, position, isActive: true, trilha: null, ...over });
+
+  it("stepsForMoment: só ativos do momento, em ordem", () => {
+    const list = [
+      step("C", "agendamento", 30), step("A", "agendamento", 10),
+      step("B", "agendamento", 20, { isActive: false }), step("X", "no_show", 5),
+    ];
+    expect(stepsForMoment(list, "agendamento").map(s => s.name)).toEqual(["A", "C"]);
+    expect(stepsForMoment(list, null)).toEqual([]);
+  });
+
+  it("empate de ordem desempata pelo nome", () => {
+    const list = [step("Beta", "agendamento", 10), step("Alfa", "agendamento", 10)];
+    expect(stepsForMoment(list, "agendamento").map(s => s.name)).toEqual(["Alfa", "Beta"]);
+  });
+
+  it("nextPosition: fim do momento, de 10 em 10; momento vazio começa em 10", () => {
+    const list = [step("A", "agendamento", 10), step("B", "agendamento", 40), step("Z", "no_show", 90)];
+    expect(nextPosition(list, "agendamento")).toBe(50);
+    expect(nextPosition(list, "reativacao")).toBe(10);
+  });
+});
+
+describe("trilhas: variações por procedimento", () => {
+  const trilhas = ["Botox", "Preenchimento labial", "Corporal", GENERIC_TRILHA];
+
+  it("abre a trilha do procedimento do lead, ignorando acento e caixa", () => {
+    expect(pickTrilha(trilhas, "BOTOX")).toBe("Botox");
+    expect(pickTrilha(trilhas, "Preenchimento Labial")).toBe("Preenchimento labial");
+  });
+
+  it("lead sem procedimento → trilha genérica", () => {
+    expect(pickTrilha(trilhas, "")).toBe(GENERIC_TRILHA);
+    expect(pickTrilha(trilhas, null)).toBe(GENERIC_TRILHA);
+  });
+
+  it("procedimento sem trilha → nenhuma (a atendente escolhe)", () => {
+    expect(pickTrilha(trilhas, "Limpeza de pele")).toBeNull();
+  });
+
+  it("filterByTrilha: gerais sempre; da trilha só a escolhida", () => {
+    const steps: StepLike[] = [
+      { name: "Saudação", moment: "primeira_resposta", position: 10, isActive: true, trilha: null },
+      { name: "Botox — diagnóstico", moment: "primeira_resposta", position: 110, isActive: true, trilha: "Botox" },
+      { name: "Labial — diagnóstico", moment: "primeira_resposta", position: 210, isActive: true, trilha: "Preenchimento labial" },
+    ];
+    expect(filterByTrilha(steps, "Botox").map(s => s.name)).toEqual(["Saudação", "Botox — diagnóstico"]);
+    expect(filterByTrilha(steps, null).map(s => s.name)).toEqual(["Saudação"]);
+  });
+
+  it("trilhasOf: distintas, na ordem em que aparecem", () => {
+    const steps = [
+      { trilha: "Botox" }, { trilha: null }, { trilha: "Botox" }, { trilha: "Corporal" },
+    ].map((x, i) => ({ name: `s${i}`, moment: "primeira_resposta" as ScriptMoment, position: i, isActive: true, ...x }));
+    expect(trilhasOf(steps)).toEqual(["Botox", "Corporal"]);
   });
 });

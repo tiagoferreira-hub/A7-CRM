@@ -221,3 +221,60 @@ export function defaultOpenSections(sections: ScriptSection[], procedimento?: st
   return sections.map((s, i) =>
     i === 0 || s.title === null || (!!procedimento && matchesPhrase(s.title, procedimento)));
 }
+
+// ── Passos: vários scripts por momento, em ordem ────────────────────────────
+
+export interface StepLike {
+  name: string;
+  moment: ScriptMoment;
+  position: number;
+  isActive: boolean;
+  /** null = passo geral; texto = passo da trilha de um procedimento. */
+  trilha?: string | null;
+}
+
+/** Ordem do painel: `position` e, no empate, o nome. */
+export const byPosition = (a: StepLike, b: StepLike) =>
+  a.position - b.position || a.name.localeCompare(b.name, "pt-BR");
+
+/** Passos ativos de um momento, na ordem do painel. */
+export function stepsForMoment<T extends StepLike>(scripts: T[], moment: ScriptMoment | null): T[] {
+  if (!moment) return [];
+  return scripts.filter(s => s.moment === moment && s.isActive).sort(byPosition);
+}
+
+/** Posição para um passo novo: depois do último do momento, de 10 em 10. */
+export function nextPosition(scripts: StepLike[], moment: ScriptMoment): number {
+  const max = scripts.filter(s => s.moment === moment).reduce((m, s) => Math.max(m, s.position), 0);
+  return max + 10;
+}
+
+// ── Trilhas: variações por procedimento ─────────────────────────────────────
+
+/**
+ * Trilha usada quando o lead NÃO tem procedimento — o documento da clínica
+ * chama de "anúncio genérico": diagnóstico aberto, sem procedimento definido.
+ */
+export const GENERIC_TRILHA = "Genérico";
+
+/** Trilhas distintas presentes nos passos, na ordem em que aparecem. */
+export function trilhasOf(steps: StepLike[]): string[] {
+  return Array.from(new Set(steps.map(s => s.trilha).filter((t): t is string => !!t)));
+}
+
+/**
+ * Trilha que o painel abre sozinho para o lead:
+ * - a que casa com o procedimento dele ("Botox" ↔ "Botox");
+ * - sem procedimento: a genérica, se existir;
+ * - procedimento sem trilha: nenhuma — a atendente escolhe no seletor.
+ */
+export function pickTrilha(trilhas: string[], procedimento?: string | null): string | null {
+  const p = (procedimento ?? "").trim();
+  if (!p) return trilhas.find(t => squash(t) === squash(GENERIC_TRILHA)) ?? null;
+  return trilhas.find(t => matchesPhrase(p, t) || matchesPhrase(t, p)) ?? null;
+}
+
+/** Passos gerais + os da trilha escolhida. Sem trilha escolhida: só os gerais. */
+export function filterByTrilha<T extends StepLike>(steps: T[], trilha: string | null): T[] {
+  return steps.filter(s => !s.trilha || (trilha !== null && s.trilha === trilha));
+}
