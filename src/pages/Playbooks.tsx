@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { usePlaybooks, Playbook, PlaybookSection, PlaybookFlowNode, PlaybookViewMode, Script, ScriptInput } from "@/context/PlaybooksContext";
 import { useLeads } from "@/context/LeadsContext";
 import { STAGE_ALL, STAGE_LABELS, LeadStage } from "@/types/lead";
-import { ALL_MOMENTS, MOMENT_LABELS, ScriptMoment, homeStageOf } from "@/lib/scriptMoments";
+import { ALL_MOMENTS, MOMENT_LABELS, ScriptMoment, byPosition, homeStageOf } from "@/lib/scriptMoments";
 import { BookOpen, Plus, ChevronLeft, FileText, GitBranch, Trash2, Pencil, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -280,6 +280,16 @@ const ScriptsList: React.FC = () => {
     return { ...s, uses: su.length, conversion: conv };
   }), [scripts, usages, leads]);
 
+  // Um grupo por momento, na ordem do atendimento; dentro dele, a ordem do painel
+  // (ativos primeiro — inativos não aparecem no painel e ficam no fim).
+  const groups = useMemo(() => ALL_MOMENTS
+    .map(m => ({
+      moment: m,
+      items: rows.filter(r => r.moment === m)
+        .sort((a, b) => Number(b.isActive) - Number(a.isActive) || byPosition(a, b)),
+    }))
+    .filter(g => g.items.length > 0), [rows]);
+
   return (
     <div>
       <div className="flex justify-end mb-4">
@@ -288,16 +298,16 @@ const ScriptsList: React.FC = () => {
           <Plus className="w-4 h-4" /> Novo Script
         </button>
       </div>
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-lg overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
             <tr>
-              <th className="text-left px-4 py-2.5">Nome</th>
-              <th className="text-left px-4 py-2.5">Momento</th>
+              <th className="text-left px-4 py-2.5 w-16">Ordem</th>
+              <th className="text-left px-4 py-2.5">Passo</th>
+              <th className="text-left px-4 py-2.5">Procedimento</th>
               <th className="text-left px-4 py-2.5">Status</th>
               <th className="text-left px-4 py-2.5">Usos</th>
               <th className="text-left px-4 py-2.5">Conversão</th>
-              <th className="text-left px-4 py-2.5">Criado em</th>
               <th className="text-right px-4 py-2.5">Ações</th>
             </tr>
           </thead>
@@ -305,10 +315,21 @@ const ScriptsList: React.FC = () => {
             {rows.length === 0 && (
               <tr><td colSpan={7} className="text-center py-8 text-muted-foreground text-xs">Nenhum script criado.</td></tr>
             )}
-            {rows.map(s => (
-              <tr key={s.id} className="border-t border-border hover:bg-accent/40">
+            {groups.map(g => (
+              <React.Fragment key={g.moment}>
+                <tr className="border-t border-border bg-muted/30">
+                  <td colSpan={7} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-foreground">
+                    {MOMENT_LABELS[g.moment]}
+                    <span className="ml-2 font-normal normal-case text-muted-foreground">
+                      {g.items.filter(i => i.isActive).length} ativos
+                    </span>
+                  </td>
+                </tr>
+            {g.items.map(s => (
+              <tr key={s.id} className={`border-t border-border hover:bg-accent/40 ${s.isActive ? "" : "opacity-50"}`}>
+                <td className="px-4 py-3 text-muted-foreground text-xs">{s.position}</td>
                 <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
-                <td className="px-4 py-3 text-foreground">{MOMENT_LABELS[s.moment]}</td>
+                <td className="px-4 py-3 text-muted-foreground text-xs">{s.trilha ?? "Todos"}</td>
                 <td className="px-4 py-3">
                   <button onClick={() => toggleScriptActive(s.id, !s.isActive)}
                     className={`text-[11px] font-medium px-2 py-1 rounded-full ${s.isActive ? "bg-crm-success-light text-crm-success" : "bg-muted text-muted-foreground"}`}>
@@ -317,12 +338,13 @@ const ScriptsList: React.FC = () => {
                 </td>
                 <td className="px-4 py-3 text-foreground">{s.uses}</td>
                 <td className="px-4 py-3 text-foreground">{s.conversion}%</td>
-                <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(s.createdAt)}</td>
                 <td className="px-4 py-3 text-right">
                   <button onClick={() => setEditId(s.id)} className="text-muted-foreground hover:text-foreground mr-2"><Pencil className="w-3.5 h-3.5" /></button>
                   <button onClick={() => { if (confirm("Excluir este script?")) deleteScript(s.id); }} className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
                 </td>
               </tr>
+            ))}
+              </React.Fragment>
             ))}
           </tbody>
         </table>
@@ -351,16 +373,20 @@ const ScriptEditModal: React.FC<{
   const [name, setName] = useState("");
   const [moment, setMoment] = useState<ScriptMoment>("primeira_resposta");
   const [triggersText, setTriggersText] = useState("");
+  const [trilha, setTrilha] = useState("");
+  const [positionText, setPositionText] = useState("");
   const [content, setContent] = useState("");
-  const [isActive, setIsActive] = useState(false);
+  const [isActive, setIsActive] = useState(true);
 
   React.useEffect(() => {
     if (open) {
       setName(script?.name ?? "");
       setMoment(script?.moment ?? "primeira_resposta");
       setTriggersText((script?.triggers ?? []).join("\n"));
+      setTrilha(script?.trilha ?? "");
+      setPositionText(script ? String(script.position) : "");
       setContent(script?.content ?? "");
-      setIsActive(script?.isActive ?? false);
+      setIsActive(script?.isActive ?? true);
     }
   }, [open, script]);
 
@@ -370,7 +396,13 @@ const ScriptEditModal: React.FC<{
   const handleSave = async () => {
     if (!name.trim()) return;
     const triggers = isObjection ? triggersText.split(/[\n,]/).map(t => t.trim()).filter(Boolean) : [];
-    await onSave({ name: name.trim(), moment, triggers, content, isActive });
+    const parsed = Number.parseInt(positionText, 10);
+    await onSave({
+      name: name.trim(), moment, triggers, content, isActive,
+      trilha: isObjection ? null : trilha.trim() || null,
+      // Vazio no passo novo = entra no fim do momento.
+      ...(Number.isFinite(parsed) ? { position: parsed } : {}),
+    });
     onClose();
   };
 
@@ -397,6 +429,26 @@ const ScriptEditModal: React.FC<{
               {moment === "no_show" && " Aparece quando o agendamento do lead está como “Não compareceu”."}
             </p>
           </div>
+          <div className="grid grid-cols-3 gap-2">
+            {!isObjection && (
+              <div className="col-span-2">
+                <label className="text-xs font-medium text-muted-foreground">Procedimento (opcional)</label>
+                <input value={trilha} onChange={e => setTrilha(e.target.value)} placeholder="Todos"
+                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+              </div>
+            )}
+            <div className={isObjection ? "col-span-3" : ""}>
+              <label className="text-xs font-medium text-muted-foreground">Ordem</label>
+              <input value={positionText} onChange={e => setPositionText(e.target.value.replace(/\D/g, ""))}
+                inputMode="numeric" placeholder="fim"
+                className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring" />
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground -mt-1">
+            {isObjection
+              ? "Ordem na lista de objeções."
+              : "Procedimento: deixe vazio se o passo vale para qualquer paciente. Preenchido (ex.: Botox), só aparece para quem tem esse procedimento. Ordem: menor aparece primeiro no painel."}
+          </p>
           {isObjection && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">Frases da paciente que disparam (uma por linha)</label>
@@ -416,9 +468,7 @@ const ScriptEditModal: React.FC<{
           </div>
           <div className="flex items-center gap-2">
             <input id="active" type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="w-4 h-4" />
-            <label htmlFor="active" className="text-sm text-foreground">
-              {isObjection ? "Ativar" : "Ativar (substitui o ativo atual deste momento)"}
-            </label>
+            <label htmlFor="active" className="text-sm text-foreground">Ativo (aparece no painel da conversa)</label>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={onClose} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent">Cancelar</button>

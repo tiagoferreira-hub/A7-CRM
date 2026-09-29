@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { LeadStage } from "@/types/lead";
-import { ScriptMoment, homeStageOf, legacyMomentFromStage } from "@/lib/scriptMoments";
+import { ScriptMoment, homeStageOf, legacyMomentFromStage, nextPosition } from "@/lib/scriptMoments";
 
 export type PlaybookViewMode = "document" | "flow";
 export interface PlaybookSection { id: string; title: string; content: string; }
@@ -28,11 +28,17 @@ export interface Script {
   /** Só em objeção: frases da paciente que fazem o painel destacar este script. */
   triggers: string[];
   content: string;
+  /** Ativo = aparece no painel. Um momento pode ter vários passos ativos. */
   isActive: boolean;
+  /** Ordem do passo dentro do momento (menor primeiro). */
+  position: number;
+  /** Variação por procedimento (ex.: "Botox"). null = passo geral. */
+  trilha: string | null;
   createdAt: string;
 }
 
-export type ScriptInput = Pick<Script, "name" | "moment" | "content" | "isActive" | "triggers">;
+export type ScriptInput = Pick<Script, "name" | "moment" | "content" | "isActive" | "triggers">
+  & { position?: number; trilha?: string | null };
 
 export interface ScriptUsage {
   id: string;
@@ -77,21 +83,19 @@ const rowToScript = (r: any): Script => ({
   stage: r.stage ?? null,
   triggers: Array.isArray(r.triggers) ? r.triggers : [],
   content: r.content,
-  isActive: r.is_active, createdAt: r.created_at,
+  isActive: r.is_active,
+  // Sem a coluna `position` (migration 20260930120000 ainda não aplicada), tudo empata em 0.
+  position: typeof r.position === "number" ? r.position : 0,
+  trilha: typeof r.trilha === "string" && r.trilha.trim() ? r.trilha.trim() : null,
+  createdAt: r.created_at,
 });
+
+const cleanTrilha = (t: string | null | undefined) => (t && t.trim()) || null;
 
 /** Frases de gatilho limpas: sem vazias, sem espaços nas pontas, sem repetição. */
 const cleanTriggers = (list: string[] | undefined) =>
   Array.from(new Set((list ?? []).map(t => t.trim()).filter(Boolean)));
 
-/** Momentos do funil têm 1 script ativo; objeções podem ter vários. */
-const isExclusive = (moment: ScriptMoment) => moment !== "objecao";
-
-/** Reflete no estado local a desativação dos outros scripts do mesmo momento. */
-const applyDeactivation = (prev: Script[], moment: ScriptMoment, keepId: string) =>
-  isExclusive(moment)
-    ? prev.map(x => x.moment === moment && x.id !== keepId ? { ...x, isActive: false } : x)
-    : prev;
 const rowToUsage = (r: any): ScriptUsage => ({
   id: r.id, scriptId: r.script_id, conversationId: r.conversation_id,
   leadId: r.lead_id, leadStageAtUse: r.lead_stage_at_use, usedAt: r.used_at,
@@ -149,33 +153,26 @@ export const PlaybooksProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setPlaybooks(prev => prev.filter(p => p.id !== id));
   }, []);
 
-  const deactivateOthers = useCallback(async (moment: ScriptMoment, keepId?: string) => {
-    if (!activeCompanyId || !isExclusive(moment)) return;
-    let q = supabase.from("scripts").update({ is_active: false })
-      .eq("company_id", activeCompanyId).eq("moment", moment).eq("is_active", true);
-    if (keepId) q = q.neq("id", keepId);
-    await q;
-  }, [activeCompanyId]);
-
   const createScript: Ctx["createScript"] = useCallback(async (s) => {
     if (!activeCompanyId) return null;
-    if (s.isActive) await deactivateOthers(s.moment);
+    // Sem ordem informada, o passo novo entra no fim do momento.
+    const position = s.position ?? nextPosition(scripts, s.moment);
     const { data } = await supabase.from("scripts").insert({
       company_id: activeCompanyId, name: s.name,
       moment: s.moment, stage: homeStageOf(s.moment),
       triggers: s.moment === "objecao" ? cleanTriggers(s.triggers) : [],
-      content: s.content, is_active: s.isActive,
+      content: s.content, is_active: s.isActive, position,
+      trilha: s.moment === "objecao" ? null : cleanTrilha(s.trilha),
     }).select().single();
     if (!data) return null;
     const sc = rowToScript(data);
-    setScripts(prev => [sc, ...(s.isActive ? applyDeactivation(prev, s.moment, sc.id) : prev)]);
+    setScripts(prev => [sc, ...prev]);
     return sc;
-  }, [activeCompanyId, deactivateOthers]);
+  }, [activeCompanyId, scripts]);
 
   const updateScript: Ctx["updateScript"] = useCallback(async (id, updates) => {
     const current = scripts.find(s => s.id === id);
     const moment = updates.moment ?? current?.moment;
-    const willBeActive = updates.isActive ?? current?.isActive ?? false;
     const patch: Partial<Script> = { ...updates };
     const dbUp: any = {};
     if (updates.name !== undefined) dbUp.name = updates.name;
@@ -193,14 +190,15 @@ export const PlaybooksProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
     if (updates.content !== undefined) dbUp.content = updates.content;
     if (updates.isActive !== undefined) dbUp.is_active = updates.isActive;
-    // Trocar de momento um script ativo pode colidir com o ativo do momento novo.
-    if (moment && willBeActive) await deactivateOthers(moment, id);
+    if (updates.position !== undefined) dbUp.position = updates.position;
+    if (updates.trilha !== undefined || updates.moment !== undefined) {
+      const trilha = moment === "objecao" ? null : cleanTrilha(updates.trilha ?? current?.trilha);
+      dbUp.trilha = trilha;
+      patch.trilha = trilha;
+    }
     await supabase.from("scripts").update(dbUp).eq("id", id);
-    setScripts(prev => {
-      const next = prev.map(s => s.id === id ? { ...s, ...patch } : s);
-      return moment && willBeActive ? applyDeactivation(next, moment, id) : next;
-    });
-  }, [scripts, deactivateOthers]);
+    setScripts(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
+  }, [scripts]);
 
   const deleteScript: Ctx["deleteScript"] = useCallback(async (id) => {
     await supabase.from("scripts").delete().eq("id", id);
@@ -208,16 +206,9 @@ export const PlaybooksProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   const toggleScriptActive: Ctx["toggleScriptActive"] = useCallback(async (id, active) => {
-    if (!activeCompanyId) return;
-    const target = scripts.find(s => s.id === id);
-    if (!target) return;
-    if (active) await deactivateOthers(target.moment, id);
     await supabase.from("scripts").update({ is_active: active }).eq("id", id);
-    setScripts(prev => {
-      const next = prev.map(s => s.id === id ? { ...s, isActive: active } : s);
-      return active ? applyDeactivation(next, target.moment, id) : next;
-    });
-  }, [activeCompanyId, scripts, deactivateOthers]);
+    setScripts(prev => prev.map(s => s.id === id ? { ...s, isActive: active } : s));
+  }, []);
 
   const recordUsage: Ctx["recordUsage"] = useCallback(async (scriptId, conversationId, leadId, stage) => {
     if (!activeCompanyId) return;

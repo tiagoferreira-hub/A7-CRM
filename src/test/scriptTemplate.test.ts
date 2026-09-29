@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  splitBlocks, tokenizeTemplate, renderBlock, buildScriptVars, pickReferenceAppointment,
+  splitBlocks, tokenizeTemplate, renderBlock, buildScriptVars, pickReferenceAppointment, missingVars,
 } from "@/lib/scriptTemplate";
 import { fillTemplate } from "@/lib/postop";
 import { Lead } from "@/types/lead";
@@ -38,6 +38,37 @@ describe("splitBlocks", () => {
 
   it("tolera conteúdo vazio", () => {
     expect(splitBlocks("")).toEqual([]);
+  });
+
+  // Bug real: seed colado no SQL Editor do Windows chegou com \r\n e o painel
+  // mostrou o script inteiro num bloco só.
+  it("quebra de linha do Windows (\\r\\n) separa as mensagens igual", () => {
+    const crlf = "Oi, {nome}! 🤍\r\n\r\n# Saudação — sem nome\r\n\r\nOi! 🤍 Sou a Carolina, da Luminae.";
+    expect(splitBlocks(crlf)).toEqual([
+      "Oi, {nome}! 🤍", "# Saudação — sem nome", "Oi! 🤍 Sou a Carolina, da Luminae.",
+    ]);
+  });
+
+  it("nenhuma mensagem fica com \\r perdido dentro", () => {
+    const blocks = splitBlocks("Nome completo:\r\nCPF:\r\n\r\nOutra");
+    expect(blocks).toEqual(["Nome completo:\nCPF:", "Outra"]);
+    expect(blocks.join("")).not.toContain("\r");
+  });
+
+  it("linha 'em branco' com espaços também separa", () => {
+    expect(splitBlocks("A\n   \nB\n\t\nC")).toEqual(["A", "B", "C"]);
+  });
+});
+
+describe("missingVars — o que ainda falta preencher", () => {
+  it("lista as variáveis sem valor, sem repetir", () => {
+    expect(missingVars("Tenho {dia1} ou {dia2}, {nome}? {dia1}", { nome: "Ana" }))
+      .toEqual(["dia1", "dia2"]);
+  });
+
+  it("mensagem completa → nada falta (pode enviar em 1 clique)", () => {
+    expect(missingVars("Oi, {nome}!", { nome: "Ana" })).toEqual([]);
+    expect(missingVars("Sem variável nenhuma", {})).toEqual([]);
   });
 });
 

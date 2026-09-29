@@ -16,14 +16,28 @@ export const SCRIPT_VAR_KEYS = [
 export type ScriptVarKey = typeof SCRIPT_VAR_KEYS[number];
 
 /**
+ * Quebra do Windows (\r\n) e do Mac antigo (\r) viram \n. Conteúdo colado no
+ * SQL Editor do Supabase no Windows chega ao banco com \r\n.
+ */
+export const normalizeNewlines = (s: string) => (s || "").replace(/\r\n?/g, "\n");
+
+/**
  * Quebra o conteúdo do script em blocos inseríveis.
  * Regra única: uma linha em branco separa blocos. Sem teto de quantidade.
+ * "Em branco" inclui linha só com espaços, e qualquer formato de quebra de linha.
  */
 export function splitBlocks(content: string): string[] {
-  return (content || "")
-    .split(/\n{2,}/)
+  return normalizeNewlines(content)
+    .split(/\n[ \t]*\n/)
     .map(b => b.trim())
     .filter(Boolean);
+}
+
+/** Variáveis do texto que ainda estão sem valor (ex.: {dia1}). Sem repetição. */
+export function missingVars(text: string, vars: TemplateVars): string[] {
+  return Array.from(new Set(
+    tokenizeTemplate(text, vars).filter(s => s.kind === "missing").map(s => s.name as string),
+  ));
 }
 
 export type SegmentKind = "text" | "filled" | "missing";
