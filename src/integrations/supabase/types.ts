@@ -740,8 +740,10 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          moment: string
           name: string
-          stage: string
+          stage: string | null
+          triggers: string[]
           updated_at: string
         }
         Insert: {
@@ -750,8 +752,10 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          moment?: string
           name: string
-          stage: string
+          stage?: string | null
+          triggers?: string[]
           updated_at?: string
         }
         Update: {
@@ -760,8 +764,10 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          moment?: string
           name?: string
-          stage?: string
+          stage?: string | null
+          triggers?: string[]
           updated_at?: string
         }
         Relationships: []

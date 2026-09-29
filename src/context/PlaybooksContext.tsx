@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { LeadStage } from "@/types/lead";
+import { ScriptMoment, homeStageOf, legacyMomentFromStage } from "@/lib/scriptMoments";
 
 export type PlaybookViewMode = "document" | "flow";
 export interface PlaybookSection { id: string; title: string; content: string; }
@@ -20,11 +21,18 @@ export interface Playbook {
 export interface Script {
   id: string;
   name: string;
-  stage: LeadStage;
+  /** Momento do atendimento — é o que escolhe o script no painel. */
+  moment: ScriptMoment;
+  /** Legado: etapa-mãe do momento (null em objeção). Não usar para selecionar script. */
+  stage: LeadStage | null;
+  /** Só em objeção: frases da paciente que fazem o painel destacar este script. */
+  triggers: string[];
   content: string;
   isActive: boolean;
   createdAt: string;
 }
+
+export type ScriptInput = Pick<Script, "name" | "moment" | "content" | "isActive" | "triggers">;
 
 export interface ScriptUsage {
   id: string;
@@ -43,8 +51,8 @@ interface Ctx {
   createPlaybook: (p: Pick<Playbook, "title" | "description" | "viewMode">) => Promise<Playbook | null>;
   updatePlaybook: (id: string, updates: Partial<Playbook>) => Promise<void>;
   deletePlaybook: (id: string) => Promise<void>;
-  createScript: (s: Pick<Script, "name" | "stage" | "content" | "isActive">) => Promise<Script | null>;
-  updateScript: (id: string, updates: Partial<Script>) => Promise<void>;
+  createScript: (s: ScriptInput) => Promise<Script | null>;
+  updateScript: (id: string, updates: Partial<ScriptInput>) => Promise<void>;
   deleteScript: (id: string) => Promise<void>;
   toggleScriptActive: (id: string, active: boolean) => Promise<void>;
   recordUsage: (scriptId: string, conversationId: string, leadId: string, stage: string | null) => Promise<void>;
@@ -63,9 +71,27 @@ const rowToPlaybook = (r: any): Playbook => ({
   createdAt: r.created_at,
 });
 const rowToScript = (r: any): Script => ({
-  id: r.id, name: r.name, stage: r.stage, content: r.content,
+  id: r.id, name: r.name,
+  // Sem a coluna `moment` (migration 20260929120000 ainda não aplicada), deriva da etapa.
+  moment: (r.moment as ScriptMoment) ?? legacyMomentFromStage(r.stage),
+  stage: r.stage ?? null,
+  triggers: Array.isArray(r.triggers) ? r.triggers : [],
+  content: r.content,
   isActive: r.is_active, createdAt: r.created_at,
 });
+
+/** Frases de gatilho limpas: sem vazias, sem espaços nas pontas, sem repetição. */
+const cleanTriggers = (list: string[] | undefined) =>
+  Array.from(new Set((list ?? []).map(t => t.trim()).filter(Boolean)));
+
+/** Momentos do funil têm 1 script ativo; objeções podem ter vários. */
+const isExclusive = (moment: ScriptMoment) => moment !== "objecao";
+
+/** Reflete no estado local a desativação dos outros scripts do mesmo momento. */
+const applyDeactivation = (prev: Script[], moment: ScriptMoment, keepId: string) =>
+  isExclusive(moment)
+    ? prev.map(x => x.moment === moment && x.id !== keepId ? { ...x, isActive: false } : x)
+    : prev;
 const rowToUsage = (r: any): ScriptUsage => ({
   id: r.id, scriptId: r.script_id, conversationId: r.conversation_id,
   leadId: r.lead_id, leadStageAtUse: r.lead_stage_at_use, usedAt: r.used_at,
@@ -123,32 +149,58 @@ export const PlaybooksProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setPlaybooks(prev => prev.filter(p => p.id !== id));
   }, []);
 
+  const deactivateOthers = useCallback(async (moment: ScriptMoment, keepId?: string) => {
+    if (!activeCompanyId || !isExclusive(moment)) return;
+    let q = supabase.from("scripts").update({ is_active: false })
+      .eq("company_id", activeCompanyId).eq("moment", moment).eq("is_active", true);
+    if (keepId) q = q.neq("id", keepId);
+    await q;
+  }, [activeCompanyId]);
+
   const createScript: Ctx["createScript"] = useCallback(async (s) => {
     if (!activeCompanyId) return null;
-    // if activating, deactivate others on same stage
-    if (s.isActive) {
-      await supabase.from("scripts").update({ is_active: false })
-        .eq("company_id", activeCompanyId).eq("stage", s.stage);
-    }
+    if (s.isActive) await deactivateOthers(s.moment);
     const { data } = await supabase.from("scripts").insert({
-      company_id: activeCompanyId, name: s.name, stage: s.stage,
+      company_id: activeCompanyId, name: s.name,
+      moment: s.moment, stage: homeStageOf(s.moment),
+      triggers: s.moment === "objecao" ? cleanTriggers(s.triggers) : [],
       content: s.content, is_active: s.isActive,
     }).select().single();
     if (!data) return null;
     const sc = rowToScript(data);
-    setScripts(prev => [sc, ...(s.isActive ? prev.map(x => x.stage === s.stage ? { ...x, isActive: false } : x) : prev)]);
+    setScripts(prev => [sc, ...(s.isActive ? applyDeactivation(prev, s.moment, sc.id) : prev)]);
     return sc;
-  }, [activeCompanyId]);
+  }, [activeCompanyId, deactivateOthers]);
 
   const updateScript: Ctx["updateScript"] = useCallback(async (id, updates) => {
+    const current = scripts.find(s => s.id === id);
+    const moment = updates.moment ?? current?.moment;
+    const willBeActive = updates.isActive ?? current?.isActive ?? false;
+    const patch: Partial<Script> = { ...updates };
     const dbUp: any = {};
     if (updates.name !== undefined) dbUp.name = updates.name;
-    if (updates.stage !== undefined) dbUp.stage = updates.stage;
+    if (updates.moment !== undefined) {
+      // Momento e etapa legada andam juntos: o gatilho do banco só recalcula
+      // `moment` quando o código antigo muda `stage` sozinho.
+      dbUp.moment = updates.moment;
+      dbUp.stage = homeStageOf(updates.moment);
+      patch.stage = homeStageOf(updates.moment);
+    }
+    if (updates.triggers !== undefined || updates.moment !== undefined) {
+      const triggers = moment === "objecao" ? cleanTriggers(updates.triggers ?? current?.triggers) : [];
+      dbUp.triggers = triggers;
+      patch.triggers = triggers;
+    }
     if (updates.content !== undefined) dbUp.content = updates.content;
     if (updates.isActive !== undefined) dbUp.is_active = updates.isActive;
+    // Trocar de momento um script ativo pode colidir com o ativo do momento novo.
+    if (moment && willBeActive) await deactivateOthers(moment, id);
     await supabase.from("scripts").update(dbUp).eq("id", id);
-    setScripts(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
-  }, []);
+    setScripts(prev => {
+      const next = prev.map(s => s.id === id ? { ...s, ...patch } : s);
+      return moment && willBeActive ? applyDeactivation(next, moment, id) : next;
+    });
+  }, [scripts, deactivateOthers]);
 
   const deleteScript: Ctx["deleteScript"] = useCallback(async (id) => {
     await supabase.from("scripts").delete().eq("id", id);
@@ -159,17 +211,13 @@ export const PlaybooksProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!activeCompanyId) return;
     const target = scripts.find(s => s.id === id);
     if (!target) return;
-    if (active) {
-      await supabase.from("scripts").update({ is_active: false })
-        .eq("company_id", activeCompanyId).eq("stage", target.stage);
-    }
+    if (active) await deactivateOthers(target.moment, id);
     await supabase.from("scripts").update({ is_active: active }).eq("id", id);
-    setScripts(prev => prev.map(s => {
-      if (s.id === id) return { ...s, isActive: active };
-      if (active && s.stage === target.stage) return { ...s, isActive: false };
-      return s;
-    }));
-  }, [activeCompanyId, scripts]);
+    setScripts(prev => {
+      const next = prev.map(s => s.id === id ? { ...s, isActive: active } : s);
+      return active ? applyDeactivation(next, target.moment, id) : next;
+    });
+  }, [activeCompanyId, scripts, deactivateOthers]);
 
   const recordUsage: Ctx["recordUsage"] = useCallback(async (scriptId, conversationId, leadId, stage) => {
     if (!activeCompanyId) return;
