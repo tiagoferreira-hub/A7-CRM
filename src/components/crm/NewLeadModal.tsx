@@ -111,7 +111,9 @@ const NewLeadModal: React.FC<Props> = ({ open, onClose }) => {
             <label className="text-xs font-medium text-muted-foreground">Observações</label>
             <textarea className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none" rows={2} value={form.observations} onChange={(e) => set("observations", e.target.value)} />
           </div>
-          <div className="flex justify-end pt-2">
+          {/* Rodapé fixo: os campos rolam por baixo e "Criar lead" fica sempre à vista.
+              -mx/-mb-6 estendem o fundo até a borda do modal (que tem p-6). */}
+          <div className="sticky bottom-0 -mx-6 -mb-6 mt-2 flex justify-end px-6 py-4 bg-background border-t border-border">
             <button type="button" onClick={onClose} className="text-sm font-medium px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent transition-colors mr-2">
               Cancelar
             </button>

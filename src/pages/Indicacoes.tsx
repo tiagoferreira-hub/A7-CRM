@@ -96,10 +96,10 @@ const Indicacoes: React.FC = () => {
           )}
         </div>
 
-        <div className="text-xs text-muted-foreground bg-card/50 border border-dashed border-border rounded-xl p-4">
-          <strong className="text-foreground">Próximo passo (v2):</strong> uma página pública de captação
-          (Edge Function no Supabase) que recebe o link <code>?ref=...</code> e cadastra o lead indicado
-          automaticamente, sem precisar de login. Requer um access token do Supabase para publicar a função.
+        <div className="text-xs text-muted-foreground bg-card/50 border border-border rounded-xl p-4">
+          <strong className="text-foreground">Como funciona:</strong> clique em <em>Copiar</em> ao lado de uma
+          paciente e envie o link para ela compartilhar. Quem se cadastrar pelo link entra no funil como
+          indicação dela e aparece neste ranking.
         </div>
       </div>
     </div>

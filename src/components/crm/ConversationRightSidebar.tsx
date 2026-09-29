@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { UserRound, Phone, Paperclip, Clock, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon, BookOpen } from "lucide-react";
+import { UserRound, Paperclip, Clock, ExternalLink, Image as ImageIcon, FileText, Link as LinkIcon, BookOpen } from "lucide-react";
 import { Lead, LeadStage, STAGE_LABELS, ORIGIN_LABELS } from "@/types/lead";
 import { Conversation, Message } from "@/context/ConversationsContext";
 import { useCompanyMembers } from "@/hooks/useCompanyMembers";
@@ -9,7 +9,7 @@ import ScriptPanel from "@/components/crm/ScriptPanel";
 import ServiceBadges from "@/components/crm/ServiceBadges";
 import { cn } from "@/lib/utils";
 
-export type RightPanelKey = "details" | "calls" | "attachments" | "activities" | "script";
+export type RightPanelKey = "details" | "attachments" | "activities" | "script";
 
 
 interface Props {
@@ -76,7 +76,6 @@ const ConversationRightSidebar: React.FC<Props> = ({
 
   const icons: { key: RightPanelKey; icon: any; label: string }[] = [
     { key: "details", icon: UserRound, label: "Detalhes" },
-    { key: "calls", icon: Phone, label: "Chamadas" },
     { key: "attachments", icon: Paperclip, label: "Anexos" },
     { key: "activities", icon: Clock, label: "Atividades" },
     { key: "script", icon: BookOpen, label: "Script" },
@@ -156,14 +155,6 @@ const ConversationRightSidebar: React.FC<Props> = ({
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Observações</div>
                   <div className="text-foreground whitespace-pre-wrap text-xs">{lead.observations || "—"}</div>
                 </div>
-              </div>
-            )}
-
-            {activePanel === "calls" && (
-              <div className="h-full flex flex-col items-center justify-center text-center py-12 text-muted-foreground">
-                <Phone className="w-10 h-10 mb-2 opacity-50" />
-                <p className="text-sm font-medium">Em breve</p>
-                <p className="text-xs mt-1">Chamadas estarão disponíveis em breve.</p>
               </div>
             )}
 

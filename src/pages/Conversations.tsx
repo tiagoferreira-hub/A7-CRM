@@ -9,8 +9,8 @@ import { useCompanyMembers } from "@/hooks/useCompanyMembers";
 import { ORIGIN_LABELS, STAGE_LABELS, STAGE_ORDER, LeadStage } from "@/types/lead";
 import { APPOINTMENT_TYPE_LABELS, APPOINTMENT_TYPE_OPTIONS, AppointmentType } from "@/types/appointment";
 import {
-  Search, Send, Phone, CheckSquare, CalendarPlus, Clock, Sparkles,
-  Inbox, User, UserX, PhoneIncoming, Bot, Activity, Users, Star,
+  Search, Send, Phone, CheckSquare, CalendarPlus, Clock,
+  Inbox, User, UserX, Activity, Star,
   ChevronDown, ChevronRight, MessageCircle, Instagram, Lock, CheckCircle2,
 } from "lucide-react";
 import LeadDetailModal from "@/components/crm/LeadDetailModal";
@@ -31,7 +31,7 @@ const WaitingBadge: React.FC<{ since: string }> = ({ since }) => {
 };
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type InboxKey = "all" | "mine" | "noowner" | "calls" | "unread" | "awaiting" | "pending_fup";
+type InboxKey = "all" | "mine" | "noowner" | "unread" | "awaiting" | "pending_fup";
 
 const formatTime = (iso: string) => {
   const d = new Date(iso);
@@ -80,9 +80,7 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
   const [rightPanel, setRightPanel] = useState<RightPanelKey | null>(null);
 
   const [expandedInbox, setExpandedInbox] = useState(true);
-  const [expandedAI, setExpandedAI] = useState(true);
   const [expandedLifecycle, setExpandedLifecycle] = useState(true);
-  const [expandedTeam, setExpandedTeam] = useState(false);
   const [expandedCustom, setExpandedCustom] = useState(false);
 
   const [taskOpen, setTaskOpen] = useState(false);
@@ -139,7 +137,6 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
       if (activeInbox === "unread" && c.unreadCount === 0 && !c.isUnread) return false;
       if (activeInbox === "awaiting" && !c.awaitingReply) return false;
       if (activeInbox === "pending_fup" && !leadsWithPendingFup.has(lead.id)) return false;
-      if (activeInbox === "calls") return false; // not implemented yet
       // stage filter
       if (activeStage && lead.stage !== activeStage) return false;
       // search
@@ -313,25 +310,7 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
                 <NavItem label="Todas" icon={<Inbox className="w-3.5 h-3.5" />} count={counters.all} active={activeInbox === "all" && !activeStage} onClick={() => { setActiveInbox("all"); setActiveStage(null); }} />
                 <NavItem label="Minhas" icon={<User className="w-3.5 h-3.5" />} count={counters.mine} active={activeInbox === "mine"} onClick={() => { setActiveInbox("mine"); setActiveStage(null); }} />
                 <NavItem label="Sem responsável" icon={<UserX className="w-3.5 h-3.5" />} count={counters.noowner} active={activeInbox === "noowner"} onClick={() => { setActiveInbox("noowner"); setActiveStage(null); }} />
-                <NavItem label="Ligações recebidas" icon={<PhoneIncoming className="w-3.5 h-3.5" />} count={0} active={activeInbox === "calls"} onClick={() => { setActiveInbox("calls"); setActiveStage(null); }} disabled />
-              </div>
-            )}
-          </div>
-
-          {/* AI Agents */}
-          <div>
-            <SectionHeader label="AI Agents" open={expandedAI} onToggle={() => setExpandedAI(v => !v)} icon={<Bot className="w-3 h-3" />} />
-            {expandedAI && (
-              <div className="space-y-0.5">
-                <NavItem
-                  label="Assistente Comercial IA"
-                  icon={<Sparkles className="w-3.5 h-3.5" />}
-                  count={counters.awaiting}
-                  active={activeInbox === "awaiting"}
-                  onClick={() => { setActiveInbox("awaiting"); setActiveStage(null); }}
-                />
-                <NavItem label="SDR IA" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
-                <NavItem label="Follow-up IA" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
+                <NavItem label="Aguardando resposta" icon={<Clock className="w-3.5 h-3.5" />} count={counters.awaiting} active={activeInbox === "awaiting"} onClick={() => { setActiveInbox("awaiting"); setActiveStage(null); }} />
               </div>
             )}
           </div>
@@ -355,28 +334,12 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
             )}
           </div>
 
-          {/* Team Inbox */}
-          <div>
-            <SectionHeader label="Team Inbox" open={expandedTeam} onToggle={() => setExpandedTeam(v => !v)} icon={<Users className="w-3 h-3" />} />
-            {expandedTeam && (
-              <div className="space-y-0.5">
-                <NavItem label="Comercial" icon={<Users className="w-3.5 h-3.5" />} disabled />
-                <NavItem label="Suporte" icon={<Users className="w-3.5 h-3.5" />} disabled />
-                <NavItem label="Equipe A" icon={<Users className="w-3.5 h-3.5" />} disabled />
-                <NavItem label="Equipe B" icon={<Users className="w-3.5 h-3.5" />} disabled />
-              </div>
-            )}
-          </div>
-
           {/* Custom Inbox */}
           <div>
             <SectionHeader label="Custom Inbox" open={expandedCustom} onToggle={() => setExpandedCustom(v => !v)} icon={<Star className="w-3 h-3" />} />
             {expandedCustom && (
               <div className="space-y-0.5">
                 <NavItem label="Follow-up pendente" icon={<Clock className="w-3.5 h-3.5" />} count={counters.pending_fup} active={activeInbox === "pending_fup"} onClick={() => { setActiveInbox("pending_fup"); setActiveStage(null); }} />
-                <NavItem label="Leads VIP" icon={<Star className="w-3.5 h-3.5" />} disabled />
-                <NavItem label="Campanhas" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
-                <NavItem label="Reativação" icon={<Sparkles className="w-3.5 h-3.5" />} disabled />
               </div>
             )}
           </div>

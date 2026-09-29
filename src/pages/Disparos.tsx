@@ -42,8 +42,10 @@ const Disparos: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-3 max-w-4xl mx-auto w-full">
+        {/* Não remover: sem este aviso a clínica acharia que o disparo saiu. O envio real
+            depende da conexão do WhatsApp (F7 no ROADMAP). */}
         <p className="text-xs text-muted-foreground">
-          Estrutura preparada para disparos via WhatsApp, e-mail e outros canais. Envio real será habilitado com a integração de canais.
+          Os disparos ficam salvos aqui. O envio automático começa quando o WhatsApp da clínica for conectado ao sistema.
         </p>
         {campaigns.length === 0 && (
           <div className="text-center py-16 border border-dashed border-border rounded-lg">
