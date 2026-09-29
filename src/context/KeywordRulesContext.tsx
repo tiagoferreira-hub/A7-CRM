@@ -42,7 +42,9 @@ const ruleToRow = (r: Partial<Omit<KeywordRule, "id">>): any => {
   return row;
 };
 
-// Exemplos prontos (mesmos do seed da migration) para companies sem regras.
+// Exemplos prontos para companies sem regras.
+// Sem "depois"/"vou pensar": objeção não é etapa — tem script de objeção no painel
+// e o lead fica onde está (ver migration 20260929120000_script_moments.sql).
 const EXAMPLE_RULES: Omit<KeywordRule, "id">[] = [
   { keyword: "agendamento marcado", matchType: "contains", targetStage: "agendado", priority: 10, active: true, allowBackward: false },
   { keyword: "agendado", matchType: "contains", targetStage: "agendado", priority: 20, active: true, allowBackward: false },
@@ -50,7 +52,6 @@ const EXAMPLE_RULES: Omit<KeywordRule, "id">[] = [
   { keyword: "fechado", matchType: "contains", targetStage: "fechou", priority: 20, active: true, allowBackward: false },
   { keyword: "pacote", matchType: "contains", targetStage: "fechou", priority: 30, active: true, allowBackward: false },
   { keyword: "não tenho interesse", matchType: "contains", targetStage: "lead_frio", priority: 10, active: true, allowBackward: false },
-  { keyword: "depois", matchType: "contains", targetStage: "lead_frio", priority: 90, active: true, allowBackward: false },
 ];
 
 export const KeywordRulesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
