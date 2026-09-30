@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import {
-  Workflow, MessageSquare, Users, Calendar, CheckSquare, Send,
+  LayoutDashboard, MessageSquare, Users, Calendar, CheckSquare, Send,
   GitBranch, BarChart3, Settings as SettingsIcon, LogOut, ArrowLeft, Home,
-  Sun, Moon, BookOpen, Gift, Stethoscope,
+  Sun, Moon, BookOpen, Gift, Stethoscope, type LucideIcon,
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -24,9 +24,9 @@ const AppSidebar: React.FC<Props> = ({ tab, setTab }) => {
   const { theme, toggleTheme } = useTheme();
   const isSeller = role === "seller";
 
-  const items: { key: AppTab; icon: any; label: string; roles?: string[] }[] = [
+  const items: { key: AppTab; icon: LucideIcon; label: string; roles?: string[] }[] = [
     ...(isSeller ? [{ key: "home" as AppTab, icon: Home, label: "Início" }] : []),
-    { key: "lifecycle", icon: Workflow, label: "Lifecycle" },
+    { key: "lifecycle", icon: LayoutDashboard, label: "Dashboard" },
     { key: "conversations", icon: MessageSquare, label: "Conversas" },
     { key: "contacts", icon: Users, label: "Contatos" },
     { key: "agenda", icon: Calendar, label: "Agenda" },

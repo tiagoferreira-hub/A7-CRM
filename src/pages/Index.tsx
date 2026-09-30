@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import AppSidebar, { AppTab } from "@/components/AppSidebar";
-import KanbanBoard from "@/components/crm/KanbanBoard";
+import Lifecycle from "@/pages/Lifecycle";
 import SellerDashboard from "@/components/crm/SellerDashboard";
 import Settings from "@/pages/Settings";
 import Tasks from "@/pages/Tasks";
@@ -50,7 +50,7 @@ const Index: React.FC = () => {
           barra extra. min-w-0 deixa o conteúdo encolher dentro do flex. */}
       <main className="flex-1 min-w-0 overflow-y-auto">
         {tab === "home" && isSeller && <SellerDashboard />}
-        {tab === "lifecycle" && <KanbanBoard />}
+        {tab === "lifecycle" && <Lifecycle />}
         {tab === "conversations" && (
           <Conversations
             pendingLeadId={pendingLeadId}

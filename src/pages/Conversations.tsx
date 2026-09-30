@@ -310,7 +310,7 @@ const Conversations: React.FC<ConversationsProps> = ({ pendingLeadId, onPendingH
                 <NavItem label="Todas" icon={<Inbox className="w-3.5 h-3.5" />} count={counters.all} active={activeInbox === "all" && !activeStage} onClick={() => { setActiveInbox("all"); setActiveStage(null); }} />
                 <NavItem label="Minhas" icon={<User className="w-3.5 h-3.5" />} count={counters.mine} active={activeInbox === "mine"} onClick={() => { setActiveInbox("mine"); setActiveStage(null); }} />
                 <NavItem label="Sem responsável" icon={<UserX className="w-3.5 h-3.5" />} count={counters.noowner} active={activeInbox === "noowner"} onClick={() => { setActiveInbox("noowner"); setActiveStage(null); }} />
-                <NavItem label="Aguardando resposta" icon={<Clock className="w-3.5 h-3.5" />} count={counters.awaiting} active={activeInbox === "awaiting"} onClick={() => { setActiveInbox("awaiting"); setActiveStage(null); }} />
+                <NavItem label="Aguardando a paciente" icon={<Clock className="w-3.5 h-3.5" />} count={counters.awaiting} active={activeInbox === "awaiting"} onClick={() => { setActiveInbox("awaiting"); setActiveStage(null); }} />
               </div>
             )}
           </div>
