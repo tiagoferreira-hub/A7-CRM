@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Link, useSearchParams } from "react-router-dom";
 import Logo from "@/components/Logo";
 import { ArrowLeft } from "lucide-react";
+import { requestPasswordReset } from "@/lib/passwordRecovery";
 
 const Login: React.FC = () => {
   const { signIn, signUp } = useAuth();
@@ -16,6 +17,26 @@ const Login: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+  const [forgot, setForgot] = useState(false);
+
+  const openForgot = (open: boolean) => { setForgot(open); setError(""); setSuccess(""); };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    const result = await requestPasswordReset(email);
+    setLoading(false);
+    if (result === "sent") {
+      // Mesma resposta exista a conta ou não: a tela não revela quem tem cadastro.
+      setSuccess("Se este e-mail tiver uma conta, enviamos um link para criar uma senha nova. Confira também a caixa de spam.");
+    } else if (result === "rate_limited") {
+      setError("Muitos pedidos seguidos. Espere alguns minutos e tente de novo.");
+    } else {
+      setError("Não foi possível enviar o e-mail agora. Tente de novo em alguns minutos.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +67,43 @@ const Login: React.FC = () => {
           <p className="text-sm text-muted-foreground mt-1">Saúde & Estética</p>
         </div>
 
+        {forgot ? (
+          <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground mb-1">Recuperar senha</h2>
+            <p className="text-xs text-muted-foreground mb-4">
+              Informe o e-mail da sua conta. Vamos enviar um link para você criar uma senha nova.
+            </p>
+            <form onSubmit={handleForgot} className="space-y-3">
+              <div>
+                <label htmlFor="email-recuperacao" className="text-xs font-medium text-muted-foreground">E-mail</label>
+                <input
+                  id="email-recuperacao"
+                  type="email"
+                  autoComplete="email"
+                  className="w-full mt-0.5 text-sm border border-input rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+              {success && <p role="status" className="text-xs text-crm-success">{success}</p>}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full text-sm font-medium px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {loading ? "Enviando..." : "Enviar link de recuperação"}
+              </button>
+            </form>
+            <button
+              onClick={() => openForgot(false)}
+              className="w-full text-xs text-muted-foreground hover:text-foreground mt-4 transition-colors"
+            >
+              Voltar para entrar
+            </button>
+          </div>
+        ) : (
         <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground mb-4">
             {isSignUp ? "Criar conta" : "Entrar"}
@@ -89,6 +147,15 @@ const Login: React.FC = () => {
                 required
                 minLength={6}
               />
+              {!isSignUp && (
+                <button
+                  type="button"
+                  onClick={() => openForgot(true)}
+                  className="mt-1.5 text-xs text-primary hover:underline"
+                >
+                  Esqueci minha senha
+                </button>
+              )}
             </div>
 
             {error && <p className="text-xs text-destructive">{error}</p>}
@@ -112,6 +179,7 @@ const Login: React.FC = () => {
             </button>
           )}
         </div>
+        )}
       </div>
     </div>
   );

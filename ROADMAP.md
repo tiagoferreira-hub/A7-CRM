@@ -31,6 +31,13 @@ e **diagnosticar** (auditoria por IA).
 - **Segredos** (não gravados aqui): senha do banco (Session Pooler,
   `aws-1-sa-east-1.pooler.supabase.com:5432`, user `postgres.xydhsjngwwsyqehpdhcf`) e
   Supabase Access Token (`sbp_...`). Reenviar no chat se a sessão perder.
+- **Vercel:** `vercel.json` manda todo endereço para o app (SPA). Sem ele, endereço direto dá 404
+  — quebrava `/indique/<ref>` e `/redefinir-senha`.
+- **Recuperação de senha (fora do código, no painel do Supabase):**
+  - Authentication → URL Configuration: Site URL `https://a7-crm-ashy.vercel.app` e
+    Redirect URLs com `https://a7-crm-ashy.vercel.app/**`.
+  - O e-mail PADRÃO do Supabase só entrega para membros da equipe do projeto (~2/hora).
+    Para clínicas: SMTP próprio em Authentication → SMTP Settings.
 
 ## 3. Convenções de trabalho
 
