@@ -24,6 +24,8 @@ import Landing from "./pages/Landing";
 import OwnerPanel from "./pages/OwnerPanel";
 import NotFound from "./pages/NotFound";
 import Capture from "./pages/Capture";
+import ResetPassword from "./pages/ResetPassword";
+import { RECOVERY_PATH } from "./lib/passwordRecovery";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +35,13 @@ const AppRoutes = () => {
   // Rota PÚBLICA de captação por indicação — sem login, antes de qualquer gate.
   if (window.location.pathname.startsWith("/indique/")) {
     return <Capture />;
+  }
+
+  // Link do e-mail de recuperação. Tem de vir ANTES do gate de login: o
+  // supabase-js já entra com a sessão de recuperação, e sem isto a pessoa cairia
+  // dentro do sistema sem nunca trocar a senha.
+  if (window.location.pathname === RECOVERY_PATH) {
+    return <ResetPassword />;
   }
 
   if (loading) {
